@@ -18,20 +18,21 @@ class ReportController extends Controller
      */
     public function reservations(Request $request)
     {
+        $companyId = \Illuminate\Support\Facades\Auth::user()->company_id;
         $hotels = Hotel::where('active', true)->get();
         $restaurants = Restaurant::where('active', true)->get();
         $mealTypes = MealType::where('active', true)->get();
-        
         $query = Reservation::query()
-            ->with(['restaurant', 'hotel', 'mealType', 'guest']);
+            ->with(['guestDetails', 'hotel', 'restaurant', 'mealType.translation'])
+            ->where('reservations.company_id', $companyId);
         
         // Apply filters if provided
         if ($request->filled('start_date')) {
-            $query->whereDate('reservation_date', '>=', $request->start_date);
+            $query->whereDate('day', '>=', $request->start_date);
         }
         
         if ($request->filled('end_date')) {
-            $query->whereDate('reservation_date', '<=', $request->end_date);
+            $query->whereDate('day', '<=', $request->end_date);
         }
         
         if ($request->filled('hotel_id')) {
@@ -78,24 +79,24 @@ class ReportController extends Controller
         $totalReservations = Reservation::count();
         
         // Count today's reservations
-        $todayReservations = Reservation::whereDate('reservation_date', $today)->count();
+        $todayReservations = Reservation::whereDate('day', $today)->count();
         
         // Count this week's reservations
-        $weekReservations = Reservation::whereDate('reservation_date', '>=', $startOfWeek)
-            ->whereDate('reservation_date', '<=', $endOfWeek)
+        $weekReservations = Reservation::whereDate('day', '>=', $startOfWeek)
+            ->whereDate('day', '<=', $endOfWeek)
             ->count();
         
         // Count this month's reservations
-        $monthReservations = Reservation::whereDate('reservation_date', '>=', $startOfMonth)
-            ->whereDate('reservation_date', '<=', $endOfMonth)
+        $monthReservations = Reservation::whereDate('day', '>=', $startOfMonth)
+            ->whereDate('day', '<=', $endOfMonth)
             ->count();
         
         // Get reservations by meal type (for pie chart)
         $reservationsByMealType = DB::table('reservations')
             ->join('meal_types', 'reservations.meal_types_id', '=', 'meal_types.meal_types_id')
             ->join('meal_types_translation', function($join) {
-                $join->on('meal_types.meal_types_id', '=', 'meal_types_translation.meal_type_id')
-                    ->where('meal_types_translation.locale', '=', app()->getLocale());
+                $join->on('meal_types.meal_types_id', '=', 'meal_types_translation.meal_types_id')
+                    ->where('meal_types_translation.language_code', '=', app()->getLocale());
             })
             ->select('meal_types_translation.name', DB::raw('count(*) as total'))
             ->groupBy('meal_types_translation.name')
@@ -110,9 +111,9 @@ class ReportController extends Controller
         
         // Get reservations by day of week (for line chart)
         $reservationsByDay = DB::table('reservations')
-            ->select(DB::raw('DAYNAME(reservation_date) as day'), DB::raw('count(*) as total'))
+            ->select(DB::raw('DAYNAME(day) as day'), DB::raw('count(*) as total'))
             ->groupBy('day')
-            ->orderByRaw("FIELD(day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')")
+            ->orderByRaw('FIELD(day, "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")')
             ->get();
         
         return view('admin.reports.statistics', compact(

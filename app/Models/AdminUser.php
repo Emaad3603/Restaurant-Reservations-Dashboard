@@ -25,21 +25,10 @@ class AdminUser extends Authenticatable
     ];
 
     /**
-     * Get the admin privileges for this user.
+     * Get the admin privilege for this user.
      */
-    public function privileges()
+    public function privilege()
     {
-        return $this->hasMany(AdminPrivilege::class, 'admin_id');
-    }
-
-    /**
-     * Check if the admin has a specific privilege.
-     *
-     * @param string $privilege
-     * @return bool
-     */
-    public function hasPrivilege($privilege)
-    {
-        return $this->privileges()->where('privilege', $privilege)->exists();
+        return $this->hasOne(AdminPrivilege::class, 'admin_users_id', 'admin_users_id');
     }
 }

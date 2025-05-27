@@ -19,8 +19,6 @@
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
-                            <th>Time</th>
-                            <th>Hotel/Restaurant</th>
                             <th>Status</th>
                             <th>Reservations</th>
                             <th>Actions</th>
@@ -31,21 +29,6 @@
                             <tr>
                                 <td>{{ $mealType->meal_types_id }}</td>
                                 <td>{{ $mealType->translation->name }}</td>
-                                <td>
-                                    @if($mealType->start_time && $mealType->end_time)
-                                        {{ date('h:i A', strtotime($mealType->start_time)) }} - {{ date('h:i A', strtotime($mealType->end_time)) }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($mealType->hotel)
-                                        <span class="d-block">Hotel: {{ $mealType->hotel->name }}</span>
-                                    @endif
-                                    @if($mealType->restaurant)
-                                        <span class="d-block">Restaurant: {{ $mealType->restaurant->name }}</span>
-                                    @endif
-                                </td>
                                 <td>
                                     @if($mealType->active)
                                         <span class="badge bg-success">Active</span>

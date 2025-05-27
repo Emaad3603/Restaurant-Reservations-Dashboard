@@ -12,11 +12,13 @@ class AdminPrivilege extends Model
     protected $table = 'admin_privileges';
     protected $guarded = [];
 
+    public $timestamps = false;
+
     /**
      * Get the admin user that owns the privilege.
      */
     public function adminUser()
     {
-        return $this->belongsTo(AdminUser::class, 'admin_id');
+        return $this->belongsTo(AdminUser::class, 'admin_users_id', 'admin_users_id');
     }
 }

@@ -13,7 +13,7 @@
 
     <div class="card">
         <div class="card-body">
-            <form action="{{ route('admin.hotels.update', $hotel) }}" method="POST">
+            <form action="{{ route('admin.hotels.update', $hotel) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 
@@ -90,14 +90,14 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="logo_url" class="form-label">Logo URL</label>
-                    <input type="text" class="form-control @error('logo_url') is-invalid @enderror" id="logo_url" name="logo_url" value="{{ old('logo_url', $hotel->logo_url) }}">
+                    <label for="logo_url" class="form-label">Logo</label>
+                    <input type="file" class="form-control @error('logo_url') is-invalid @enderror" id="logo_url" name="logo_url" accept="image/*">
                     @error('logo_url')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                     @if($hotel->logo_url)
                         <div class="mt-2">
-                            <img src="{{ $hotel->logo_url }}" alt="Logo Preview" class="img-thumbnail" style="max-width: 200px;">
+                            <img src="{{ asset('storage/' . $hotel->logo_url) }}" alt="Logo Preview" class="img-thumbnail" style="max-width: 200px;">
                         </div>
                     @endif
                 </div>

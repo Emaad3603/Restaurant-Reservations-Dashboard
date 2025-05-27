@@ -5,7 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Hotel;
 use App\Models\Restaurant;
+use App\Models\MenuItem;
+use App\Models\MenuCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class RestaurantController extends Controller
 {
@@ -35,7 +40,32 @@ class RestaurantController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'hotel_id' => 'required|exists:hotels,hotel_id',
+            'capacity' => 'nullable|integer',
+            'company_id' => 'nullable|integer',
+            'logo_url' => 'nullable|image|max:2048',
+            'active' => 'nullable|boolean',
+            'always_paid_free' => 'nullable|boolean',
+        ]);
+
+        $logoPath = null;
+        if ($request->hasFile('logo_url')) {
+            $logoPath = $request->file('logo_url')->store('restaurants', 'public');
+        }
+
+        $restaurant = new Restaurant();
+        $restaurant->name = $validated['name'];
+        $restaurant->hotel_id = $validated['hotel_id'];
+        $restaurant->capacity = $validated['capacity'] ?? null;
+        $restaurant->company_id = $validated['company_id'] ?? null;
+        $restaurant->logo_url = $logoPath;
+        $restaurant->active = $request->has('active');
+        $restaurant->always_paid_free = $request->has('always_paid_free');
+        $restaurant->save();
+
+        return redirect()->route('admin.restaurants.index')->with('success', 'Restaurant created successfully.');
     }
 
     /**
@@ -65,7 +95,34 @@ class RestaurantController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $restaurant = Restaurant::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'hotel_id' => 'required|exists:hotels,hotel_id',
+            'capacity' => 'nullable|integer',
+            'company_id' => 'nullable|integer',
+            'logo_url' => 'nullable|image|max:2048',
+            'active' => 'nullable|boolean',
+            'always_paid_free' => 'nullable|boolean',
+        ]);
+
+        if ($request->hasFile('logo_url')) {
+            // Delete old logo if exists
+            if ($restaurant->logo_url) {
+                Storage::disk('public')->delete($restaurant->logo_url);
+            }
+            $restaurant->logo_url = $request->file('logo_url')->store('restaurants', 'public');
+        }
+
+        $restaurant->name = $validated['name'];
+        $restaurant->hotel_id = $validated['hotel_id'];
+        $restaurant->capacity = $validated['capacity'] ?? null;
+        $restaurant->company_id = $validated['company_id'] ?? null;
+        $restaurant->active = $request->has('active');
+        $restaurant->always_paid_free = $request->has('always_paid_free');
+        $restaurant->save();
+
+        return redirect()->route('admin.restaurants.index')->with('success', 'Restaurant updated successfully.');
     }
 
     /**
@@ -73,6 +130,110 @@ class RestaurantController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            DB::beginTransaction();
+            
+            $restaurant = Restaurant::findOrFail($id);
+            
+            // Check if there are any reservations
+            if ($restaurant->reservations()->exists()) {
+                return redirect()->route('admin.restaurants.index')
+                    ->with('error', 'Cannot delete restaurant with existing reservations. Please ensure all reservations are handled first.');
+            }
+
+            // Delete restaurant translations first
+            DB::table('restaurants_translations')
+                ->where('restaurants_id', $restaurant->restaurants_id)
+                ->delete();
+
+            // Delete restaurant pricing times and related records
+            $pricingTimes = DB::table('restaurant_pricing_times')
+                ->where('restaurant_id', $restaurant->restaurants_id)
+                ->get();
+
+            foreach ($pricingTimes as $pricingTime) {
+                // Delete related discounts
+                DB::table('restaurant_pricing_times_discounts')
+                    ->where('pricing_time_id', $pricingTime->id)
+                    ->delete();
+                
+                // Delete related taxes
+                DB::table('restaurant_pricing_times_taxes')
+                    ->where('pricing_time_id', $pricingTime->id)
+                    ->delete();
+                
+                // Delete the pricing time
+                DB::table('restaurant_pricing_times')
+                    ->where('id', $pricingTime->id)
+                    ->delete();
+            }
+
+            // Delete menu items and their translations
+            $menuItems = DB::table('items')
+                ->where('company_id', $restaurant->company_id)
+                ->get();
+
+            foreach ($menuItems as $item) {
+                // Delete item translations
+                DB::table('items_translation')
+                    ->where('items_id', $item->items_id)
+                    ->delete();
+
+                // Delete the menu item
+                DB::table('items')
+                    ->where('items_id', $item->items_id)
+                    ->delete();
+            }
+
+            // Get menu categories
+            $categories = DB::table('menu_categories')
+                ->where('company_id', $restaurant->company_id)
+                ->get();
+
+            foreach ($categories as $category) {
+                // Delete menu subcategories and their translations
+                $subcategories = DB::table('menu_subcategories')
+                    ->where('menu_categories_id', $category->menu_categories_id)
+                    ->get();
+
+                foreach ($subcategories as $subcategory) {
+                    // Delete subcategory translations
+                    DB::table('menu_subcategories_translation')
+                        ->where('menu_subcategories_id', $subcategory->menu_subcategories_id)
+                        ->delete();
+
+                    // Delete the subcategory
+                    DB::table('menu_subcategories')
+                        ->where('menu_subcategories_id', $subcategory->menu_subcategories_id)
+                        ->delete();
+                }
+
+                // Delete category translations
+                DB::table('menu_categories_translation')
+                    ->where('menu_categories_id', $category->menu_categories_id)
+                    ->delete();
+
+                // Delete the category
+                DB::table('menu_categories')
+                    ->where('menu_categories_id', $category->menu_categories_id)
+                    ->delete();
+            }
+
+            // Finally delete the restaurant
+            DB::table('restaurants')
+                ->where('restaurants_id', $restaurant->restaurants_id)
+                ->delete();
+            
+            DB::commit();
+            
+            return redirect()->route('admin.restaurants.index')
+                ->with('success', 'Restaurant and all related data deleted successfully.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Restaurant deletion failed: ' . $e->getMessage());
+            return redirect()->route('admin.restaurants.index')
+                ->with('error', 'Failed to delete restaurant. Please try again later.');
+        }
     }
 }

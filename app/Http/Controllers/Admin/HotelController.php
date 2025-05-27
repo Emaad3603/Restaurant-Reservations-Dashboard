@@ -51,9 +51,17 @@ class HotelController extends Controller
             'city' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
             'zip_code' => 'nullable|string|max:20',
+            'logo_url' => 'nullable|image|max:2048',
         ]);
 
-        Hotel::create($validated);
+        $logoPath = null;
+        if ($request->hasFile('logo_url')) {
+            $logoPath = $request->file('logo_url')->store('hotels', 'public');
+        }
+
+        $hotel = new Hotel($validated);
+        $hotel->logo_url = $logoPath;
+        $hotel->save();
 
         return redirect()->route('admin.hotels.index')
             ->with('success', 'Hotel created successfully.');
@@ -92,9 +100,19 @@ class HotelController extends Controller
             'city' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
             'zip_code' => 'nullable|string|max:20',
+            'logo_url' => 'nullable|image|max:2048',
         ]);
 
+        if ($request->hasFile('logo_url')) {
+            // Delete old logo if exists
+            if ($hotel->logo_url) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($hotel->logo_url);
+            }
+            $hotel->logo_url = $request->file('logo_url')->store('hotels', 'public');
+        }
+
         $hotel->update($validated);
+        $hotel->save();
 
         return redirect()->route('admin.hotels.index')
             ->with('success', 'Hotel updated successfully.');

@@ -127,13 +127,13 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-list-ul me-1"></i> Menu Management
+                        <i class="bi bi-clock-history me-1"></i> Pricing Times Management
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p>Manage this restaurant's menu categories and items.</p>
+                    <p>Manage this restaurant's pricing times and view their menus.</p>
                     <a href="{{ route('admin.restaurants.menu.index', $restaurant->restaurants_id) }}" class="btn btn-primary btn-sm">
-                        <i class="bi bi-grid me-1"></i> View Menu
+                        <i class="bi bi-clock-history me-1"></i> View Pricing Times
                     </a>
                 </div>
             </div>

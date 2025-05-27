@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MenuCategory extends Model
 {
@@ -15,19 +17,18 @@ class MenuCategory extends Model
     protected $fillable = [
         'label',
         'company_id',
-        'restaurant_id',
         'background_url',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'menu_id',
+        'name',
+        'description',
+        'active'
     ];
 
-    /**
-     * Get the restaurant that owns the menu category.
-     */
-    public function restaurant()
-    {
-        return $this->belongsTo(Restaurant::class, 'restaurant_id', 'restaurants_id');
-    }
+    protected $casts = [
+        'active' => 'boolean'
+    ];
 
     /**
      * Get the menu items for the category.
@@ -35,5 +36,20 @@ class MenuCategory extends Model
     public function menuItems()
     {
         return $this->hasMany(MenuItem::class, 'category_id', 'menu_categories_id');
+    }
+
+    public function menu(): BelongsTo
+    {
+        return $this->belongsTo(Menu::class);
+    }
+
+    public function subcategories(): HasMany
+    {
+        return $this->hasMany(MenuSubcategory::class, 'category_id');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(MenuItem::class, 'category_id');
     }
 }

@@ -3,302 +3,336 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Menu;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
-use App\Models\Restaurant;
+use App\Models\MenuSubcategory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MenuController extends Controller
 {
-    /**
-     * Display the menu categories and items for a restaurant.
-     */
-    public function index(Request $request, $restaurantId)
+    public function index()
     {
-        $restaurant = Restaurant::findOrFail($restaurantId);
-        $categories = MenuCategory::where('restaurant_id', $restaurantId)
+        $companyId = Auth::user()->company_id;
+        $menus = Menu::with(['categories.subcategories.items', 'categories.items'])
+            ->where('company_id', $companyId)->get();
+
+        return view('admin.menus.manage', compact('menus'));
+    }
+
+    public function manage()
+    {
+        $menus = Menu::with(['categories', 'categories.subcategories', 'categories.items'])
+            ->where('company_id', Auth::user()->company_id)
             ->get();
-            
-        return view('admin.menu.index', compact('restaurant', 'categories'));
+
+        return view('admin.menus.manage', compact('menus'));
     }
 
-    /**
-     * Show form to create a new menu category.
-     */
-    public function createCategory($restaurantId)
-    {
-        $restaurant = Restaurant::findOrFail($restaurantId);
-        return view('admin.menu.create-category', compact('restaurant'));
-    }
-
-    /**
-     * Store a new menu category.
-     */
-    public function storeCategory(Request $request, $restaurantId)
+    public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'active' => 'boolean'
         ]);
 
-        $restaurant = Restaurant::findOrFail($restaurantId);
-        
         try {
             DB::beginTransaction();
-            
-            $category = new MenuCategory();
-            $category->label = $request->name;
-            $category->background_url = $request->description ?? '';
-            $category->restaurant_id = $restaurantId;
-            $category->company_id = $restaurant->company_id;
-            $category->created_by = 1;
-            $category->updated_by = 1;
-            $category->save();
-            
+
+            $menu = Menu::create([
+                'name' => $request->name,
+                'description' => $request->description,
+                'active' => $request->active ?? true,
+                'company_id' => Auth::user()->company_id
+            ]);
+
             DB::commit();
-            
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('success', 'Menu category created successfully');
+            return response()->json(['success' => true, 'menu' => $menu]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Error creating menu category: ' . $e->getMessage());
+            Log::error('Menu creation failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to create menu'], 500);
         }
     }
 
-    /**
-     * Show form to edit a menu category.
-     */
-    public function editCategory($restaurantId, $categoryId)
-    {
-        $restaurant = Restaurant::findOrFail($restaurantId);
-        $category = MenuCategory::findOrFail($categoryId);
-        
-        // Ensure the category belongs to the restaurant
-        if ($category->restaurant_id != $restaurantId) {
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Category does not belong to this restaurant');
-        }
-        
-        return view('admin.menu.edit-category', compact('restaurant', 'category'));
-    }
-
-    /**
-     * Update a menu category.
-     */
-    public function updateCategory(Request $request, $restaurantId, $categoryId)
+    public function update(Request $request, Menu $menu)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'active' => 'boolean'
         ]);
 
-        $restaurant = Restaurant::findOrFail($restaurantId);
-        $category = MenuCategory::findOrFail($categoryId);
-        
-        // Ensure the category belongs to the restaurant
-        if ($category->restaurant_id != $restaurantId) {
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Category does not belong to this restaurant');
-        }
-        
         try {
             DB::beginTransaction();
-            
-            $category->label = $request->name;
-            $category->background_url = $request->description ?? '';
-            $category->updated_by = 1;
-            $category->save();
-            
+
+            $menu->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'active' => $request->active ?? $menu->active
+            ]);
+
             DB::commit();
-            
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('success', 'Menu category updated successfully');
+            return response()->json(['success' => true, 'menu' => $menu]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Error updating menu category: ' . $e->getMessage());
+            Log::error('Menu update failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to update menu'], 500);
         }
     }
 
-    /**
-     * Delete a menu category.
-     */
-    public function destroyCategory($restaurantId, $categoryId)
+    public function destroy(Menu $menu)
     {
-        $category = MenuCategory::findOrFail($categoryId);
-        
-        // Ensure the category belongs to the restaurant
-        if ($category->restaurant_id != $restaurantId) {
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Category does not belong to this restaurant');
-        }
-        
-        // Check if category has menu items
-        if ($category->menuItems()->count() > 0) {
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Cannot delete category that has menu items');
-        }
-        
         try {
             DB::beginTransaction();
+
+            // Delete all related items first
+            MenuItem::whereIn('category_id', $menu->categories->pluck('id'))->delete();
             
+            // Delete all subcategories
+            MenuSubcategory::whereIn('category_id', $menu->categories->pluck('id'))->delete();
+            
+            // Delete all categories
+            $menu->categories()->delete();
+            
+            // Finally delete the menu
+            $menu->delete();
+
+            DB::commit();
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Menu deletion failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete menu'], 500);
+        }
+    }
+
+    public function storeCategory(Request $request)
+    {
+        $request->validate([
+            'menu_id' => 'required|exists:menus,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'active' => 'boolean'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $category = MenuCategory::create([
+                'menu_id' => $request->menu_id,
+                'name' => $request->name,
+                'description' => $request->description,
+                'active' => $request->active ?? true
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'category' => $category]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Category creation failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to create category'], 500);
+        }
+    }
+
+    public function updateCategory(Request $request, MenuCategory $category)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'active' => 'boolean'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $category->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'active' => $request->active ?? $category->active
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'category' => $category]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Category update failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to update category'], 500);
+        }
+    }
+
+    public function destroyCategory(MenuCategory $category)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Delete all related items first
+            $category->items()->delete();
+            
+            // Delete all subcategories
+            $category->subcategories()->delete();
+            
+            // Finally delete the category
             $category->delete();
-            
+
             DB::commit();
-            
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('success', 'Menu category deleted successfully');
+            return response()->json(['success' => true]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Error deleting menu category: ' . $e->getMessage());
+            Log::error('Category deletion failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete category'], 500);
         }
     }
 
-    /**
-     * Show form to create a new menu item.
-     */
-    public function createItem($restaurantId, $categoryId)
+    public function storeSubcategory(Request $request)
     {
-        $restaurant = Restaurant::findOrFail($restaurantId);
-        $category = MenuCategory::findOrFail($categoryId);
-        
-        // Ensure the category belongs to the restaurant
-        if ($category->restaurant_id != $restaurantId) {
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Category does not belong to this restaurant');
+        $request->validate([
+            'category_id' => 'required|exists:menu_categories,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'active' => 'boolean'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $subcategory = MenuSubcategory::create([
+                'category_id' => $request->category_id,
+                'name' => $request->name,
+                'description' => $request->description,
+                'active' => $request->active ?? true
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'subcategory' => $subcategory]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Subcategory creation failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to create subcategory'], 500);
         }
-        
-        return view('admin.menu.create-item', compact('restaurant', 'category'));
     }
 
-    /**
-     * Store a new menu item.
-     */
-    public function storeItem(Request $request, $restaurantId, $categoryId)
+    public function updateSubcategory(Request $request, MenuSubcategory $subcategory)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image|max:2048', // 2MB Max
+            'active' => 'boolean'
         ]);
 
-        $category = MenuCategory::findOrFail($categoryId);
-        
-        // Ensure the category belongs to the restaurant
-        if ($category->restaurant_id != $restaurantId) {
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Category does not belong to this restaurant');
-        }
-        
-        $item = new MenuItem();
-        $item->name = $request->name;
-        $item->description = $request->description;
-        $item->price = $request->price;
-        $item->category_id = $categoryId;
-        $item->active = $request->has('active');
-        
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $filename = 'menu_item_' . time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-            $path = $image->storeAs('menu-items', $filename, 'public');
-            $item->image = $path;
-        }
-        
-        $item->save();
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-            ->with('success', 'Menu item created successfully');
+            $subcategory->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'active' => $request->active ?? $subcategory->active
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'subcategory' => $subcategory]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Subcategory update failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to update subcategory'], 500);
+        }
     }
 
-    /**
-     * Show form to edit a menu item.
-     */
-    public function editItem($restaurantId, $itemId)
+    public function destroySubcategory(MenuSubcategory $subcategory)
     {
-        $restaurant = Restaurant::findOrFail($restaurantId);
-        $item = MenuItem::with('category')->findOrFail($itemId);
-        
-        // Ensure the item belongs to a category in this restaurant
-        if ($item->category->restaurant_id != $restaurantId) {
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Item does not belong to this restaurant');
-        }
-        
-        return view('admin.menu.edit-item', compact('restaurant', 'item'));
-    }
+        try {
+            DB::beginTransaction();
 
-    /**
-     * Update a menu item.
-     */
-    public function updateItem(Request $request, $restaurantId, $itemId)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image|max:2048', // 2MB Max
-        ]);
-
-        $item = MenuItem::with('category')->findOrFail($itemId);
-        
-        // Ensure the item belongs to a category in this restaurant
-        if ($item->category->restaurant_id != $restaurantId) {
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Item does not belong to this restaurant');
-        }
-        
-        $item->name = $request->name;
-        $item->description = $request->description;
-        $item->price = $request->price;
-        $item->active = $request->has('active');
-        
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($item->image) {
-                Storage::disk('public')->delete($item->image);
-            }
+            // Delete all related items first
+            $subcategory->items()->delete();
             
-            $image = $request->file('image');
-            $filename = 'menu_item_' . time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-            $path = $image->storeAs('menu-items', $filename, 'public');
-            $item->image = $path;
-        }
-        
-        $item->save();
+            // Finally delete the subcategory
+            $subcategory->delete();
 
-        return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-            ->with('success', 'Menu item updated successfully');
+            DB::commit();
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Subcategory deletion failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete subcategory'], 500);
+        }
     }
 
-    /**
-     * Delete a menu item.
-     */
-    public function destroyItem($restaurantId, $itemId)
+    public function storeItem(Request $request)
     {
-        $item = MenuItem::with('category')->findOrFail($itemId);
-        
-        // Ensure the item belongs to a category in this restaurant
-        if ($item->category->restaurant_id != $restaurantId) {
-            return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-                ->with('error', 'Item does not belong to this restaurant');
+        $request->validate([
+            'category_id' => 'required|exists:menu_categories,id',
+            'subcategory_id' => 'nullable|exists:menu_subcategories,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'active' => 'boolean'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $item = MenuItem::create([
+                'category_id' => $request->category_id,
+                'subcategory_id' => $request->subcategory_id,
+                'name' => $request->name,
+                'description' => $request->description,
+                'price' => $request->price,
+                'active' => $request->active ?? true
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'item' => $item]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Item creation failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to create item'], 500);
         }
-        
-        // Delete the image if exists
-        if ($item->image) {
-            Storage::disk('public')->delete($item->image);
+    }
+
+    public function updateItem(Request $request, MenuItem $item)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'active' => 'boolean'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $item->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'price' => $request->price,
+                'active' => $request->active ?? $item->active
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'item' => $item]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Item update failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to update item'], 500);
         }
-        
-        $item->delete();
-        
-        return redirect()->route('admin.restaurants.menu.index', $restaurantId)
-            ->with('success', 'Menu item deleted successfully');
+    }
+
+    public function destroyItem(MenuItem $item)
+    {
+        try {
+            DB::beginTransaction();
+            $item->delete();
+            DB::commit();
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Item deletion failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete item'], 500);
+        }
     }
 }

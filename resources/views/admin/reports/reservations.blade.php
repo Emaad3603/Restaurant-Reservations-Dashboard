@@ -95,7 +95,9 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Date & Time</th>
+                            <th>Room Number</th>
+                            <th>Date</th>
+                            <th>Time</th>
                             <th>Guest</th>
                             <th>Hotel</th>
                             <th>Restaurant</th>
@@ -109,58 +111,40 @@
                         @forelse($reservations as $reservation)
                             <tr>
                                 <td>{{ $reservation->reservations_id }}</td>
+                                <td>{{ $reservation->room_number ?? 'N/A' }}</td>
+                                <td>{{ $reservation->reservation_date ? date('Y-m-d', strtotime($reservation->reservation_date)) : ($reservation->day ?? 'N/A') }}</td>
+                                <td>{{ $reservation->reservation_time ? date('h:i A', strtotime($reservation->reservation_time)) : ($reservation->time ? date('h:i A', strtotime($reservation->time)) : 'N/A') }}</td>
+                                <td>{{ $reservation->guestNames ?? 'N/A' }}</td>
+                                <td>{{ $reservation->hotel ? $reservation->hotel->name : 'N/A' }}</td>
+                                <td>{{ $reservation->restaurant ? $reservation->restaurant->name : 'N/A' }}</td>
+                                <td>{{ $reservation->mealType && $reservation->mealType->translation ? $reservation->mealType->translation->name : 'N/A' }}</td>
+                                <td>{{ $reservation->people_count ?? $reservation->pax ?? 'N/A' }}</td>
                                 <td>
-                                    {{ $reservation->reservation_date ? date('Y-m-d', strtotime($reservation->reservation_date)) : 'N/A' }}
-                                    <br>
-                                    {{ $reservation->reservation_time ? date('h:i A', strtotime($reservation->reservation_time)) : 'N/A' }}
-                                </td>
-                                <td>
-                                    @if($reservation->guest)
-                                        {{ $reservation->guest->name }}
+                                    @if($reservation->status == \App\Models\Reservation::STATUS_PENDING)
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    @elseif($reservation->status == \App\Models\Reservation::STATUS_CONFIRMED)
+                                        <span class="badge bg-success">Confirmed</span>
+                                    @elseif($reservation->status == \App\Models\Reservation::STATUS_CANCELLED)
+                                        <span class="badge bg-danger">Cancelled</span>
+                                    @elseif($reservation->status == \App\Models\Reservation::STATUS_COMPLETED)
+                                        <span class="badge bg-info">Completed</span>
+                                    @elseif($reservation->status == \App\Models\Reservation::STATUS_NO_SHOW)
+                                        <span class="badge bg-secondary">No Show</span>
                                     @else
-                                        N/A
+                                        <span class="badge bg-secondary">Unknown</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @if($reservation->hotel)
-                                        {{ $reservation->hotel->name }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($reservation->restaurant)
-                                        {{ $reservation->restaurant->name }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($reservation->mealType)
-                                        {{ $reservation->mealType->translation->name }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td>{{ $reservation->people_count ?? 'N/A' }}</td>
-                                <td>
-                                    @if($reservation->canceled)
-                                        <span class="badge bg-danger">Canceled</span>
-                                    @elseif($reservation->ended)
-                                        <span class="badge bg-success">Completed</span>
-                                    @else
-                                        <span class="badge bg-warning">Pending</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <a href="{{ route('admin.reservations.show', $reservation) }}" class="btn btn-sm btn-info">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
+                                    <div class="btn-group">
+                                        <a href="{{ route('admin.reservations.show', $reservation) }}" class="btn btn-sm btn-info">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center">No reservations found</td>
+                                <td colspan="11" class="text-center">No reservations found</td>
                             </tr>
                         @endforelse
                     </tbody>

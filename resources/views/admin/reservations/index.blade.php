@@ -18,7 +18,9 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Date & Time</th>
+                            <th>Room Number</th>
+                            <th>Date</th>
+                            <th>Time</th>
                             <th>Guest</th>
                             <th>Hotel</th>
                             <th>Restaurant</th>
@@ -32,40 +34,14 @@
                         @forelse($reservations as $reservation)
                             <tr>
                                 <td>{{ $reservation->reservations_id }}</td>
-                                <td>
-                                    {{ $reservation->reservation_date ? date('Y-m-d', strtotime($reservation->reservation_date)) : 'N/A' }}
-                                    <br>
-                                    {{ $reservation->reservation_time ? date('h:i A', strtotime($reservation->reservation_time)) : 'N/A' }}
-                                </td>
-                                <td>
-                                    @if($reservation->guest)
-                                        {{ $reservation->guest->name }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($reservation->hotel)
-                                        {{ $reservation->hotel->name }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($reservation->restaurant)
-                                        {{ $reservation->restaurant->name }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($reservation->mealType)
-                                        {{ $reservation->mealType->translation->name ?? 'N/A' }}
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td>{{ $reservation->people_count ?? 'N/A' }}</td>
+                                <td>{{ $reservation->room_number ?? 'N/A' }}</td>
+                                <td>{{ $reservation->reservation_date ? date('Y-m-d', strtotime($reservation->reservation_date)) : ($reservation->day ?? 'N/A') }}</td>
+                                <td>{{ $reservation->reservation_time ? date('h:i A', strtotime($reservation->reservation_time)) : ($reservation->time ? date('h:i A', strtotime($reservation->time)) : 'N/A') }}</td>
+                                <td>{{ $reservation->guestNames ?? 'N/A' }}</td>
+                                <td>{{ $reservation->hotel ? $reservation->hotel->name : 'N/A' }}</td>
+                                <td>{{ $reservation->restaurant ? $reservation->restaurant->name : 'N/A' }}</td>
+                                <td>{{ $reservation->mealType && $reservation->mealType->translation ? $reservation->mealType->translation->name : 'N/A' }}</td>
+                                <td>{{ $reservation->people_count ?? $reservation->pax ?? 'N/A' }}</td>
                                 <td>
                                     @if($reservation->status == \App\Models\Reservation::STATUS_PENDING)
                                         <span class="badge bg-warning text-dark">Pending</span>
@@ -96,12 +72,20 @@
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
+                                        <form action="{{ route('admin.reservations.confirm', $reservation) }}" method="POST" style="display: inline-block;">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-success">Confirm</button>
+                                        </form>
+                                        <form action="{{ route('admin.reservations.cancel', $reservation) }}" method="POST" style="display: inline-block;">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-warning">Cancel</button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center">No reservations found</td>
+                                <td colspan="11" class="text-center">No reservations found</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -9,6 +9,7 @@ use App\Models\MealTypeTranslation;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MealTypeController extends Controller
 {
@@ -42,43 +43,21 @@ class MealTypeController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'start_time' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'hotel_id' => 'nullable|exists:hotels,hotel_id',
-            'restaurant_id' => 'nullable|exists:restaurants,restaurants_id',
-            'description' => 'nullable|string',
-            'icon' => 'nullable|string|max:255',
+            'label' => 'required|string|max:255',
+            'company_id' => 'nullable|integer',
             'active' => 'sometimes|boolean',
         ]);
 
-        DB::beginTransaction();
-        
         try {
             $mealType = MealType::create([
-                'hotel_id' => $request->hotel_id,
-                'restaurant_id' => $request->restaurant_id,
-                'start_time' => $request->start_time,
-                'end_time' => $request->end_time,
+                'label' => $request->label,
+                'company_id' => $request->company_id,
                 'active' => $request->has('active'),
-                'icon' => $request->icon,
             ]);
-            
-            // Create default translation for current locale
-            MealTypeTranslation::create([
-                'meal_type_id' => $mealType->meal_types_id,
-                'name' => $request->name,
-                'description' => $request->description,
-                'locale' => app()->getLocale(),
-            ]);
-            
-            DB::commit();
-            
+
             return redirect()->route('admin.meal-types.index')
                 ->with('success', 'Meal type created successfully.');
         } catch (\Exception $e) {
-            DB::rollBack();
-            
             return back()->with('error', 'Failed to create meal type: ' . $e->getMessage())
                 ->withInput();
         }
@@ -113,49 +92,23 @@ class MealTypeController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'start_time' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'hotel_id' => 'nullable|exists:hotels,hotel_id',
-            'restaurant_id' => 'nullable|exists:restaurants,restaurants_id',
-            'description' => 'nullable|string',
-            'icon' => 'nullable|string|max:255',
+            'label' => 'required|string|max:255',
+            'company_id' => 'nullable|integer',
             'active' => 'sometimes|boolean',
         ]);
 
-        DB::beginTransaction();
-        
         try {
             $mealType = MealType::findOrFail($id);
-            
+
             $mealType->update([
-                'hotel_id' => $request->hotel_id,
-                'restaurant_id' => $request->restaurant_id,
-                'start_time' => $request->start_time,
-                'end_time' => $request->end_time,
+                'label' => $request->label,
+                'company_id' => $request->company_id,
                 'active' => $request->has('active'),
-                'icon' => $request->icon,
             ]);
-            
-            // Update or create translation
-            MealTypeTranslation::updateOrCreate(
-                [
-                    'meal_type_id' => $mealType->meal_types_id,
-                    'locale' => app()->getLocale()
-                ],
-                [
-                    'name' => $request->name,
-                    'description' => $request->description,
-                ]
-            );
-            
-            DB::commit();
-            
+
             return redirect()->route('admin.meal-types.index')
                 ->with('success', 'Meal type updated successfully.');
         } catch (\Exception $e) {
-            DB::rollBack();
-            
             return back()->with('error', 'Failed to update meal type: ' . $e->getMessage())
                 ->withInput();
         }
@@ -167,19 +120,28 @@ class MealTypeController extends Controller
     public function destroy(string $id)
     {
         try {
-            $mealType = MealType::findOrFail($id);
+            DB::beginTransaction();
             
-            // Check if there are any related reservations
-            if ($mealType->reservations->count() > 0) {
-                return back()->with('error', 'Cannot delete this meal type because it has associated reservations.');
-            }
+            // Delete meal type translations first
+            DB::table('meal_types_translation')
+                ->where('meal_types_id', $id)
+                ->delete();
+
+            // Delete the meal type
+            DB::table('meal_types')
+                ->where('meal_types_id', $id)
+                ->delete();
             
-            $mealType->delete();
+            DB::commit();
             
             return redirect()->route('admin.meal-types.index')
                 ->with('success', 'Meal type deleted successfully.');
+                
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to delete meal type: ' . $e->getMessage());
+            DB::rollBack();
+            Log::error('Meal type deletion failed: ' . $e->getMessage());
+            return redirect()->route('admin.meal-types.index')
+                ->with('error', 'Failed to delete meal type. Please try again later.');
         }
     }
 }

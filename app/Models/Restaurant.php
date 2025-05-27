@@ -48,12 +48,4 @@ class Restaurant extends Model
                 'cuisine' => ''
             ]);
     }
-
-    /**
-     * Get the menu categories for the restaurant.
-     */
-    public function menuCategories()
-    {
-        return $this->hasMany(MenuCategory::class, 'restaurant_id', 'restaurants_id');
-    }
 }

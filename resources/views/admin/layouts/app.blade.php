@@ -106,31 +106,54 @@
                     <i class="bi bi-speedometer2"></i> Dashboard
                 </a>
             </li>
+            @php $user = auth()->user(); $priv = $user?->privilege; @endphp
+            @if($user && ($user->admin || $priv?->hotels_tab))
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('admin.hotels.*') ? 'active' : '' }}" href="{{ route('admin.hotels.index') }}">
                     <i class="bi bi-building"></i> Hotels
                 </a>
             </li>
+            @endif
+            @if($user && ($user->admin || $priv?->restaurants_tab))
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('admin.restaurants.*') ? 'active' : '' }}" href="{{ route('admin.restaurants.index') }}">
                     <i class="bi bi-shop"></i> Restaurants
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.menu.*') ? 'active' : '' }}" href="{{ route('admin.menu.index') }}">
+                    <i class="bi bi-list-ul"></i> Menu Management
+                </a>
+            </li>
+            @endif
+            @if($user && ($user->admin || $priv?->meal_types_tab))
+            <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('admin.meal-types.*') ? 'active' : '' }}" href="{{ route('admin.meal-types.index') }}">
                     <i class="bi bi-clock"></i> Meal Types
                 </a>
             </li>
+            @endif
+            @if($user && ($user->admin || $priv?->reservations_tab))
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('admin.reservations.*') ? 'active' : '' }}" href="{{ route('admin.reservations.index') }}">
                     <i class="bi bi-calendar-check"></i> Reservations
                 </a>
             </li>
+            @endif
+            @if($user && ($user->admin || $priv?->reports_tab))
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" href="{{ route('admin.reports.reservations') }}">
                     <i class="bi bi-bar-chart"></i> Reports
                 </a>
             </li>
+            @endif
+            @if($user && $user->admin)
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+            </li>
+            @endif
         </ul>
     </div>
 

@@ -58,11 +58,7 @@
                     <div class="row mb-3">
                         <div class="col-md-3 fw-bold">Guest</div>
                         <div class="col-md-9">
-                            @if($reservation->guest)
-                                {{ $reservation->guest->name }}
-                            @else
-                                N/A
-                            @endif
+                            {{ $reservation->guestNames ?? 'N/A' }}
                         </div>
                     </div>
                     <div class="row mb-3">

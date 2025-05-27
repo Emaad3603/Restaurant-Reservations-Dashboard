@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\GuestReservation;
+use App\Models\GuestDetail;
 
 class Reservation extends Model
 {
@@ -54,7 +56,32 @@ class Reservation extends Model
     }
 
     /**
-     * Get the hotel for this reservation.
+     * Get the guest reservation (main guest record).
+     */
+    public function guestReservation()
+    {
+        return $this->belongsTo(GuestReservation::class, 'guest_reservations_id', 'guest_reservations_id');
+    }
+
+    /**
+     * Get all guest details for this reservation.
+     */
+    public function guestDetails()
+    {
+        return $this->hasMany(GuestDetail::class, 'guest_reservations_id', 'guest_reservations_id');
+    }
+
+    /**
+     * Get a comma-separated list of guest names.
+     */
+    public function getGuestNamesAttribute()
+    {
+        $names = $this->guestDetails->pluck('guest_name')->filter()->all();
+        return $names ? implode(', ', $names) : null;
+    }
+
+    /**
+     * Get the hotel for this reservation (from guest reservation).
      */
     public function hotel()
     {
@@ -62,10 +89,26 @@ class Reservation extends Model
     }
 
     /**
-     * Get the guest details for this reservation.
+     * Get the reservation date.
      */
-    public function guest()
+    public function getReservationDateAttribute()
     {
-        return $this->belongsTo(Guest::class, 'guest_reservations_id', 'guest_details_id');
+        return $this->day;
+    }
+
+    /**
+     * Get the reservation time.
+     */
+    public function getReservationTimeAttribute()
+    {
+        return $this->time;
+    }
+
+    /**
+     * Get the number of people for this reservation.
+     */
+    public function getPeopleCountAttribute()
+    {
+        return $this->pax ?? $this->guestDetails->count() ?: null;
     }
 }

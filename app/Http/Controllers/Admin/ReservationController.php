@@ -17,7 +17,7 @@ class ReservationController extends Controller
      */
     public function index()
     {
-        $reservations = Reservation::with(['restaurant', 'hotel', 'mealType', 'guest'])
+        $reservations = Reservation::with(['restaurant', 'hotel', 'mealType', 'guestDetails'])
             ->latest()
             ->paginate(10);
             
@@ -50,7 +50,7 @@ class ReservationController extends Controller
      */
     public function show(string $id)
     {
-        $reservation = Reservation::with(['restaurant', 'hotel', 'mealType', 'guest'])
+        $reservation = Reservation::with(['restaurant', 'hotel', 'mealType', 'guestDetails'])
             ->findOrFail($id);
             
         return view('admin.reservations.show', compact('reservation'));
@@ -86,5 +86,21 @@ class ReservationController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function confirm($id)
+    {
+        $reservation = \App\Models\Reservation::findOrFail($id);
+        $reservation->ended = 1;
+        $reservation->save();
+        return redirect()->back()->with('success', 'Reservation confirmed successfully.');
+    }
+
+    public function cancel($id)
+    {
+        $reservation = \App\Models\Reservation::findOrFail($id);
+        $reservation->canceled = 1;
+        $reservation->save();
+        return redirect()->back()->with('success', 'Reservation cancelled successfully.');
     }
 }
