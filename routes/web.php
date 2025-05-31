@@ -110,42 +110,6 @@ Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-// Test session route for debugging
-Route::get('/test-session', function () {
-    // Generate a session ID if one doesn't exist
-    if (!session()->has('test_key')) {
-        session(['test_key' => 'test_value_' . time()]);
-    }
-    
-    // Get the session ID
-    $sessionId = session()->getId();
-    
-    // Check if the session exists in the database
-    $session = DB::table('sessions')
-        ->where('session_id', $sessionId)
-        ->first();
-    
-    $output = [
-        'session_id' => $sessionId,
-        'test_key' => session('test_key', 'not set'),
-        'session_in_db' => $session ? 'Found' : 'Not found',
-    ];
-    
-    if ($session) {
-        $output['session_details'] = [
-            'last_activity' => date('Y-m-d H:i:s', $session->last_activity),
-            'payload_length' => strlen($session->payload),
-        ];
-    }
-    
-    return response()->json($output);
-});
-
-// Test privilege middleware at top level
-Route::get('priv-test', function() {
-    return 'Privilege middleware works!';
-})->middleware('adminpriv:hotels_tab');
-
 Route::prefix('admin/menu')->middleware('auth:admin')->group(function () {
     Route::get('/', [MenuController::class, 'index'])->name('admin.menu.index');
 

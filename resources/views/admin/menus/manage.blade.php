@@ -107,6 +107,7 @@
                                   <div class="modal-dialog">
                                     <form method="POST" action="{{ route('admin.menu.subcategory.store') }}">
                                       @csrf
+                                      <input type="hidden" name="menus_id" value="{{ $menu->menus_id }}">
                                       <input type="hidden" name="menu_categories_id" value="{{ $category->menu_categories_id }}">
                                       <div class="modal-content">
                                         <div class="modal-header">
@@ -121,32 +122,6 @@
                                         </div>
                                         <div class="modal-footer">
                                           <button type="submit" class="btn btn-primary">Save</button>
-                                        </div>
-                                      </div>
-                                    </form>
-                                  </div>
-                                </div>
-                                <!-- Add Item Button (for category) -->
-                                <button class="btn btn-outline-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#addItemModalCat{{ $category->menu_categories_id }}">Add Item</button>
-                                <!-- Add Item Modal (for category) -->
-                                <div class="modal fade" id="addItemModalCat{{ $category->menu_categories_id }}" tabindex="-1" aria-labelledby="addItemModalCatLabel{{ $category->menu_categories_id }}" aria-hidden="true">
-                                  <div class="modal-dialog">
-                                    <form method="POST" action="{{ route('admin.menu.item.store') }}">
-                                      @csrf
-                                      <input type="hidden" name="menu_categories_id" value="{{ $category->menu_categories_id }}">
-                                      <div class="modal-content">
-                                        <div class="modal-header">
-                                          <h5 class="modal-title" id="addItemModalCatLabel{{ $category->menu_categories_id }}">Add Item to Category</h5>
-                                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                          <div class="mb-3">
-                                            <label class="form-label">Item Name</label>
-                                            <input type="text" class="form-control" name="label" required>
-                                          </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                          <button type="submit" class="btn btn-success">Save</button>
                                         </div>
                                       </div>
                                     </form>
@@ -176,6 +151,8 @@
                                               <div class="modal-dialog">
                                                 <form method="POST" action="{{ route('admin.menu.item.store') }}">
                                                   @csrf
+                                                  <input type="hidden" name="menus_id" value="{{ $menu->menus_id }}">
+                                                  <input type="hidden" name="menu_categories_id" value="{{ $category->menu_categories_id }}">
                                                   <input type="hidden" name="menu_subcategories_id" value="{{ $subcategory->menu_subcategories_id }}">
                                                   <div class="modal-content">
                                                     <div class="modal-header">
@@ -185,11 +162,29 @@
                                                     <div class="modal-body">
                                                       <div class="mb-3">
                                                         <label class="form-label">Item Name</label>
-                                                        <input type="text" class="form-control" name="label" required>
+                                                        <input type="text" class="form-control" name="name" required>
+                                                      </div>
+                                                      <div class="mb-3">
+                                                        <label class="form-label">Price</label>
+                                                        <input type="number" class="form-control" name="price" step="0.01" required>
+                                                      </div>
+                                                      <div class="mb-3">
+                                                        <label class="form-label">Description</label>
+                                                        <textarea class="form-control" name="description" rows="2"></textarea>
+                                                      </div>
+                                                      <div class="mb-3">
+                                                        <label class="form-label">Currency</label>
+                                                        <select name="currencies_id" class="form-control" required>
+                                                          <option value="">Select Currency</option>
+                                                          @foreach($currencies as $currency)
+                                                            <option value="{{ $currency->currencies_id }}">{{ $currency->currency_code }} ({{ $currency->name }})</option>
+                                                          @endforeach
+                                                        </select>
                                                       </div>
                                                     </div>
                                                     <div class="modal-footer">
-                                                      <button type="submit" class="btn btn-success">Save</button>
+                                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                      <button type="submit" class="btn btn-primary">Add</button>
                                                     </div>
                                                   </div>
                                                 </form>
@@ -200,7 +195,7 @@
                                                 @foreach($subcategory->items as $item)
                                                     <li>
                                                         <div class="d-flex justify-content-between align-items-center">
-                                                            {{ $item->label ?? $item->name }}
+                                                            {{ $item->label ?? $item->name }} - Price: {{ \App\Models\MenuItem::where('menus_id', $menu->menus_id)->where('items_id', $item->items_id)->value('price') }} {{ \App\Models\MenuItem::where('menus_id', $menu->menus_id)->where('items_id', $item->items_id)->join('currencies', 'menus_items.currencies_id', '=', 'currencies.currencies_id')->value('currency_symbol') }}
                                                             <div>
                                                                 <!-- Edit Item Button -->
                                                                 <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#editItemModal{{ $item->items_id }}">Edit</button>
@@ -211,6 +206,51 @@
                                                                     <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this item?')">Delete</button>
                                                                 </form>
                                                             </div>
+                                                        </div>
+                                                        <!-- Edit Item Modal -->
+                                                        <div class="modal fade" id="editItemModal{{ $item->items_id }}" tabindex="-1" aria-labelledby="editItemModalLabel{{ $item->items_id }}" aria-hidden="true">
+                                                          <div class="modal-dialog">
+                                                            <form method="POST" action="{{ route('admin.menu.item.update', $item->items_id) }}">
+                                                              @csrf
+                                                              @method('PUT')
+                                                              <input type="hidden" name="menus_id" value="{{ $menu->menus_id }}">
+                                                              <input type="hidden" name="menu_categories_id" value="{{ $category->menu_categories_id }}">
+                                                              <input type="hidden" name="menu_subcategories_id" value="{{ $subcategory->menu_subcategories_id }}">
+                                                              <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                  <h5 class="modal-title" id="editItemModalLabel{{ $item->items_id }}">Edit Item</h5>
+                                                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                  <div class="mb-3">
+                                                                    <label class="form-label">Item Name</label>
+                                                                    <input type="text" class="form-control" name="name" value="{{ $item->label ?? $item->name }}" required>
+                                                                  </div>
+                                                                  <div class="mb-3">
+                                                                    <label class="form-label">Price</label>
+                                                                    <input type="number" class="form-control" name="price" step="0.01" value="{{ \App\Models\MenuItem::where('menus_id', $menu->menus_id)->where('items_id', $item->items_id)->value('price') }}" required>
+                                                                  </div>
+                                                                  <div class="mb-3">
+                                                                    <label class="form-label">Description</label>
+                                                                    <textarea class="form-control" name="description" rows="2">{{ $item->description ?? '' }}</textarea>
+                                                                  </div>
+                                                                  <div class="mb-3">
+                                                                    <label class="form-label">Currency</label>
+                                                                    <select name="currencies_id" class="form-control" required>
+                                                                      <option value="">Select Currency</option>
+                                                                      @foreach($currencies as $currency)
+                                                                        <option value="{{ $currency->currencies_id }}" {{ \App\Models\MenuItem::where('menus_id', $menu->menus_id)->where('items_id', $item->items_id)->value('currencies_id') == $currency->currencies_id ? 'selected' : '' }}>{{ $currency->currency_code }} ({{ $currency->name }})</option>
+                                                                      @endforeach
+                                                                    </select>
+                                                                  </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                  <button type="submit" class="btn btn-primary">Update</button>
+                                                                </div>
+                                                              </div>
+                                                            </form>
+                                                          </div>
                                                         </div>
                                                     </li>
                                                 @endforeach

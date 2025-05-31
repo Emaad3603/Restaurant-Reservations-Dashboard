@@ -22,10 +22,6 @@
                     <input type="text" class="form-control" id="name" name="name" value="{{ request('name') }}" placeholder="Search by name">
                 </div>
                 <div class="col-md-3">
-                    <label for="location" class="form-label">Location</label>
-                    <input type="text" class="form-control" id="location" name="location" value="{{ request('location') }}" placeholder="Search by location or address">
-                </div>
-                <div class="col-md-3">
                     <label for="hotel_id" class="form-label">Hotel</label>
                     <select class="form-select" id="hotel_id" name="hotel_id">
                         <option value="">All Hotels</option>

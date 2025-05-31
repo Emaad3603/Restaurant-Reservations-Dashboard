@@ -13,12 +13,12 @@
                     <div class="mb-2">
                         <strong>{{ $category->label }}</strong>
                         @php
-                            $items = $menu->items()->where('menu_categories_id', $category->menu_categories_id)->get();
+                            $items = $menu->items;
                         @endphp
                         @if($items->count())
                             <ul>
                                 @foreach($items as $item)
-                                    <li>{{ $item->label }} - {{ $item->price }}</li>
+                                    <li>{{ $item->label ?? $item->items_id }} - {{ $item->price }}</li>
                                 @endforeach
                             </ul>
                         @else

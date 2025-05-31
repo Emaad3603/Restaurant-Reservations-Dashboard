@@ -10,22 +10,21 @@ use App\Models\MenuSubcategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class MenuController extends Controller
 {
     public function index()
     {
         $companyId = Auth::user()->company_id;
-        $menus = Menu::with(['categories.subcategories.items', 'categories.items'])
+        $menus = Menu::with(['categories.subcategories', 'categories'])
             ->where('company_id', $companyId)->get();
-
-        return view('admin.menus.manage', compact('menus'));
+        $currencies = DB::table('currencies')->where('company_id', $companyId)->get();
+        return view('admin.menus.manage', compact('menus', 'currencies'));
     }
 
     public function manage()
     {
-        $menus = Menu::with(['categories', 'categories.subcategories', 'categories.items'])
+        $menus = Menu::with(['categories', 'categories.subcategories'])
             ->where('company_id', Auth::user()->company_id)
             ->get();
 
@@ -54,7 +53,6 @@ class MenuController extends Controller
             return response()->json(['success' => true, 'menu' => $menu]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Menu creation failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to create menu'], 500);
         }
     }
@@ -80,7 +78,6 @@ class MenuController extends Controller
             return response()->json(['success' => true, 'menu' => $menu]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Menu update failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to update menu'], 500);
         }
     }
@@ -91,10 +88,10 @@ class MenuController extends Controller
             DB::beginTransaction();
 
             // Delete all related items first
-            MenuItem::whereIn('category_id', $menu->categories->pluck('id'))->delete();
+            MenuItem::where('menus_id', $menu->menus_id)->delete();
             
             // Delete all subcategories
-            MenuSubcategory::whereIn('category_id', $menu->categories->pluck('id'))->delete();
+            MenuSubcategory::whereIn('menu_categories_id', $menu->categories->pluck('menu_categories_id'))->delete();
             
             // Delete all categories
             $menu->categories()->delete();
@@ -106,7 +103,6 @@ class MenuController extends Controller
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Menu deletion failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to delete menu'], 500);
         }
     }
@@ -114,27 +110,24 @@ class MenuController extends Controller
     public function storeCategory(Request $request)
     {
         $request->validate([
-            'menu_id' => 'required|exists:menus,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'active' => 'boolean'
+            'menus_id' => 'required|exists:menus,menus_id',
+            'label' => 'required|string|max:255',
+            // 'active' => 'boolean'
         ]);
 
         try {
             DB::beginTransaction();
 
             $category = MenuCategory::create([
-                'menu_id' => $request->menu_id,
-                'name' => $request->name,
-                'description' => $request->description,
-                'active' => $request->active ?? true
+                'menus_id' => $request->menus_id,
+                'label' => $request->label,
+                // 'active' => $request->active ?? true
             ]);
 
             DB::commit();
             return response()->json(['success' => true, 'category' => $category]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Category creation failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to create category'], 500);
         }
     }
@@ -160,7 +153,6 @@ class MenuController extends Controller
             return response()->json(['success' => true, 'category' => $category]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Category update failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to update category'], 500);
         }
     }
@@ -170,11 +162,8 @@ class MenuController extends Controller
         try {
             DB::beginTransaction();
 
-            // Delete all related items first
-            $category->items()->delete();
-            
             // Delete all subcategories
-            $category->subcategories()->delete();
+            MenuSubcategory::where('menu_categories_id', $category->menu_categories_id)->delete();
             
             // Finally delete the category
             $category->delete();
@@ -183,7 +172,6 @@ class MenuController extends Controller
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Category deletion failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to delete category'], 500);
         }
     }
@@ -191,27 +179,27 @@ class MenuController extends Controller
     public function storeSubcategory(Request $request)
     {
         $request->validate([
-            'category_id' => 'required|exists:menu_categories,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'active' => 'boolean'
+            'menu_categories_id' => 'required|exists:menu_categories,menu_categories_id',
+            'label' => 'required|string|max:255',
+            'background_url' => 'nullable|string',
         ]);
 
         try {
             DB::beginTransaction();
 
             $subcategory = MenuSubcategory::create([
-                'category_id' => $request->category_id,
-                'name' => $request->name,
-                'description' => $request->description,
-                'active' => $request->active ?? true
+                'menu_categories_id' => $request->menu_categories_id,
+                'label' => $request->label,
+                'background_url' => $request->background_url,
+                'company_id' => Auth::user()->company_id,
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
 
             DB::commit();
             return response()->json(['success' => true, 'subcategory' => $subcategory]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Subcategory creation failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to create subcategory'], 500);
         }
     }
@@ -237,7 +225,6 @@ class MenuController extends Controller
             return response()->json(['success' => true, 'subcategory' => $subcategory]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Subcategory update failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to update subcategory'], 500);
         }
     }
@@ -257,7 +244,6 @@ class MenuController extends Controller
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Subcategory deletion failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to delete subcategory'], 500);
         }
     }
@@ -265,31 +251,40 @@ class MenuController extends Controller
     public function storeItem(Request $request)
     {
         $request->validate([
-            'category_id' => 'required|exists:menu_categories,id',
-            'subcategory_id' => 'nullable|exists:menu_subcategories,id',
+            'menus_id' => 'required|exists:menus,menus_id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'active' => 'boolean'
+            'currencies_id' => 'required|exists:currencies,currencies_id',
         ]);
 
         try {
             DB::beginTransaction();
 
-            $item = MenuItem::create([
-                'category_id' => $request->category_id,
-                'subcategory_id' => $request->subcategory_id,
-                'name' => $request->name,
-                'description' => $request->description,
+            // Create a new Item record
+            $item = \App\Models\Item::create([
+                'label' => $request->name,
+                'company_id' => Auth::user()->company_id,
+                'menu_categories_id' => $request->menu_categories_id,
+                'menu_subcategories_id' => $request->menu_subcategories_id ?? null,
+                'created_by' => Auth::user()->user_name,
+                'created_at' => now(),
+            ]);
+
+            // Create the MenuItem record using the new items_id
+            $menuItem = MenuItem::create([
+                'menus_id' => $request->menus_id,
+                'items_id' => $item->items_id,
                 'price' => $request->price,
-                'active' => $request->active ?? true
+                'currencies_id' => $request->currencies_id,
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
 
             DB::commit();
-            return response()->json(['success' => true, 'item' => $item]);
+            return response()->json(['success' => true, 'item' => $menuItem]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Item creation failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to create item'], 500);
         }
     }
@@ -317,7 +312,6 @@ class MenuController extends Controller
             return response()->json(['success' => true, 'item' => $item]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Item update failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to update item'], 500);
         }
     }
@@ -331,7 +325,6 @@ class MenuController extends Controller
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Item deletion failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to delete item'], 500);
         }
     }

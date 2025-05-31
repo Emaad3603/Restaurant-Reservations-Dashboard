@@ -10,6 +10,7 @@ class AdminPrivilege extends Model
     use HasFactory;
 
     protected $table = 'admin_privileges';
+    protected $primaryKey = 'admin_privileges_id';
     protected $guarded = [];
 
     public $timestamps = false;

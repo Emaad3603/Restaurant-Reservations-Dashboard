@@ -20,10 +20,7 @@ class MenuCategory extends Model
         'background_url',
         'created_by',
         'updated_by',
-        'menu_id',
-        'name',
-        'description',
-        'active'
+        'menus_id',
     ];
 
     protected $casts = [
@@ -35,7 +32,7 @@ class MenuCategory extends Model
      */
     public function menuItems()
     {
-        return $this->hasMany(MenuItem::class, 'category_id', 'menu_categories_id');
+        return $this->hasMany(MenuItem::class, 'menus_id', 'menus_id');
     }
 
     public function menu(): BelongsTo
@@ -45,11 +42,6 @@ class MenuCategory extends Model
 
     public function subcategories(): HasMany
     {
-        return $this->hasMany(MenuSubcategory::class, 'category_id');
-    }
-
-    public function items(): HasMany
-    {
-        return $this->hasMany(MenuItem::class, 'category_id');
+        return $this->hasMany(MenuSubcategory::class, 'menu_categories_id', 'menu_categories_id');
     }
 }

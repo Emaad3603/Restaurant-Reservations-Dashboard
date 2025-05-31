@@ -11,7 +11,6 @@ use App\Models\Restaurant;
 use App\Models\BoardType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class ReservationController extends Controller
 {
@@ -151,7 +150,6 @@ class ReservationController extends Controller
                 ->with('success', 'Reservation created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to create reservation: ' . $e->getMessage());
             
             return back()->with('error', 'Failed to create reservation: ' . $e->getMessage())
                 ->withInput();
@@ -236,7 +234,6 @@ class ReservationController extends Controller
                 ->with('success', 'Reservation updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to update reservation: ' . $e->getMessage());
             
             return back()->with('error', 'Failed to update reservation: ' . $e->getMessage())
                 ->withInput();

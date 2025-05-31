@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class MenuSubcategory extends Model
 {
     protected $fillable = [
-        'category_id',
-        'name',
-        'description',
-        'active'
+        'menu_categories_id',
+        'label',
+        'background_url',
+        'company_id',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -21,11 +23,11 @@ class MenuSubcategory extends Model
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(MenuCategory::class);
+        return $this->belongsTo(MenuCategory::class, 'menu_categories_id', 'menu_categories_id');
     }
 
     public function items(): HasMany
     {
-        return $this->hasMany(MenuItem::class);
+        return $this->hasMany(\App\Models\Item::class, 'menu_subcategories_id', 'menu_subcategories_id');
     }
 } 

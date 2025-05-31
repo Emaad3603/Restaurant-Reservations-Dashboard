@@ -59,17 +59,6 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="guest_id" class="form-label">Guest</label>
-                    <select class="form-select" id="guest_id" name="guest_id">
-                        <option value="">All Guests</option>
-                        @foreach($guests as $guest)
-                            <option value="{{ $guest->guest_details_id }}" {{ request('guest_id') == $guest->guest_details_id ? 'selected' : '' }}>
-                                {{ $guest->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
                     <label for="board_type" class="form-label">Board Type</label>
                     <select class="form-select" id="board_type" name="board_type">
                         <option value="">All Board Types</option>

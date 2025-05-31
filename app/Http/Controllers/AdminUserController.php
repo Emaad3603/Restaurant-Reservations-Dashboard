@@ -7,6 +7,7 @@ use App\Models\AdminPrivilege;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class AdminUserController extends Controller
 {
@@ -41,29 +42,38 @@ class AdminUserController extends Controller
             'reports_tab' => 'required|boolean',
         ]);
 
-        $user = AdminUser::create([
-            'user_name' => $validated['user_name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'display_name' => $validated['display_name'],
-            'company_id' => auth()->user()->company_id,
-            'admin' => $validated['admin'] ?? 0,
-            'password' => Hash::make($validated['password']),
-        ]);
+        DB::beginTransaction();
+        try {
+            $user = AdminUser::create([
+                'user_name' => $validated['user_name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'display_name' => $validated['display_name'],
+                'company_id' => auth('admin')->user()->company_id,
+                'admin' => $validated['admin'] ?? 0,
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        AdminPrivilege::create([
-            'admin_users_id' => $user->admin_users_id,
-            'hotels_tab' => $validated['hotels_tab'],
-            'currencies_tab' => $validated['currencies_tab'],
-            'meal_types_tab' => $validated['meal_types_tab'],
-            'restaurants_tab' => $validated['restaurants_tab'],
-            'restaurant_times_tab' => $validated['restaurant_times_tab'],
-            'menu_links_tab' => $validated['menu_links_tab'],
-            'reservations_tab' => $validated['reservations_tab'],
-            'reports_tab' => $validated['reports_tab'],
-        ]);
+            $privilegeData = [
+                'admin_users_id' => $user->admin_users_id,
+                'hotels_tab' => $validated['hotels_tab'],
+                'currencies_tab' => $validated['currencies_tab'],
+                'meal_types_tab' => $validated['meal_types_tab'],
+                'restaurants_tab' => $validated['restaurants_tab'],
+                'restaurant_times_tab' => $validated['restaurant_times_tab'],
+                'menu_links_tab' => $validated['menu_links_tab'],
+                'reservations_tab' => $validated['reservations_tab'],
+                'reports_tab' => $validated['reports_tab'],
+            ];
 
-        return redirect()->route('admin.users.index')->with('success', 'User created!');
+            AdminPrivilege::create($privilegeData);
+
+            DB::commit();
+            return redirect()->route('admin.users.index')->with('success', 'User created successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors(['error' => 'Failed to create user: ' . $e->getMessage()]);
+        }
     }
 
     public function edit(AdminUser $user)
@@ -98,28 +108,18 @@ class AdminUserController extends Controller
             'reports_tab' => 'required|boolean',
         ]);
 
-        $user->update([
-            'user_name' => $validated['user_name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'display_name' => $validated['display_name'],
-            'admin' => $validated['admin'] ?? 0,
-            'password' => $validated['password'] ? Hash::make($validated['password']) : $user->password,
-        ]);
-
-        if ($user->privilege) {
-            $user->privilege->update([
-                'hotels_tab' => $validated['hotels_tab'],
-                'currencies_tab' => $validated['currencies_tab'],
-                'meal_types_tab' => $validated['meal_types_tab'],
-                'restaurants_tab' => $validated['restaurants_tab'],
-                'restaurant_times_tab' => $validated['restaurant_times_tab'],
-                'menu_links_tab' => $validated['menu_links_tab'],
-                'reservations_tab' => $validated['reservations_tab'],
-                'reports_tab' => $validated['reports_tab'],
+        DB::beginTransaction();
+        try {
+            $user->update([
+                'user_name' => $validated['user_name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'display_name' => $validated['display_name'],
+                'admin' => $validated['admin'] ?? 0,
+                'password' => $validated['password'] ? Hash::make($validated['password']) : $user->password,
             ]);
-        } else {
-            AdminPrivilege::create([
+
+            $privilegeData = [
                 'admin_users_id' => $user->admin_users_id,
                 'hotels_tab' => $validated['hotels_tab'],
                 'currencies_tab' => $validated['currencies_tab'],
@@ -129,10 +129,20 @@ class AdminUserController extends Controller
                 'menu_links_tab' => $validated['menu_links_tab'],
                 'reservations_tab' => $validated['reservations_tab'],
                 'reports_tab' => $validated['reports_tab'],
-            ]);
-        }
+            ];
 
-        return redirect()->route('admin.users.index')->with('success', 'User updated!');
+            if ($user->privilege) {
+                $user->privilege->update($privilegeData);
+            } else {
+                AdminPrivilege::create($privilegeData);
+            }
+
+            DB::commit();
+            return redirect()->route('admin.users.index')->with('success', 'User updated!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors(['error' => 'Failed to update user: ' . $e->getMessage()]);
+        }
     }
 
     public function destroy(AdminUser $user)

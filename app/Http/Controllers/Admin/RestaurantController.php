@@ -10,7 +10,6 @@ use App\Models\MenuCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 
 class RestaurantController extends Controller
 {
@@ -259,7 +258,6 @@ class RestaurantController extends Controller
                 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Restaurant deletion failed: ' . $e->getMessage());
             return redirect()->route('admin.restaurants.index')
                 ->with('error', 'Failed to delete restaurant. Please try again later.');
         }

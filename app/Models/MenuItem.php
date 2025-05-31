@@ -14,34 +14,13 @@ class MenuItem extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'name',
-        'description',
+        'items_id',
         'price',
-        'image',
-        'category_id',
-        'active'
+        'currencies_id',
+        'created_by',
+        'updated_by',
+        'menus_id'
     ];
 
-    /**
-     * Get the category that owns the menu item.
-     */
-    public function category()
-    {
-        return $this->belongsTo(MenuCategory::class, 'category_id', 'menu_categories_id');
-    }
-
-    /**
-     * Get the restaurant through the category.
-     */
-    public function restaurant()
-    {
-        return $this->hasOneThrough(
-            Restaurant::class,
-            MenuCategory::class,
-            'menu_categories_id', // Foreign key on the categories table...
-            'restaurants_id', // Foreign key on the restaurants table...
-            'category_id', // Local key on the menu_items table...
-            'restaurant_id' // Local key on the categories table...
-        );
-    }
+    // Removed category() and restaurant() relationships
 }
