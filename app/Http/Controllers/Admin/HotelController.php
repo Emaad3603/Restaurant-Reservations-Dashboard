@@ -21,10 +21,43 @@ class HotelController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $hotels = Hotel::orderBy('name')->paginate(10);
-        return view('admin.hotels.index', compact('hotels'));
+        $query = Hotel::query();
+
+        // Name search
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('active', $request->status === 'active');
+        }
+
+        // Company filter
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+
+        // Location search
+        if ($request->filled('location')) {
+            $query->where(function($q) use ($request) {
+                $q->where('city', 'like', '%' . $request->location . '%')
+                  ->orWhere('country', 'like', '%' . $request->location . '%')
+                  ->orWhere('address', 'like', '%' . $request->location . '%');
+            });
+        }
+
+        $hotels = $query->withCount('restaurants')
+            ->orderBy('name')
+            ->paginate(10)
+            ->withQueryString();
+
+        // Get companies for filter
+        $companies = \App\Models\Company::all();
+        
+        return view('admin.hotels.index', compact('hotels', 'companies'));
     }
 
     /**

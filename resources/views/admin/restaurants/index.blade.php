@@ -11,6 +11,53 @@
         </a>
     </div>
 
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filters</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ route('admin.restaurants.index') }}" method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="name" class="form-label">Restaurant Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ request('name') }}" placeholder="Search by name">
+                </div>
+                <div class="col-md-3">
+                    <label for="location" class="form-label">Location</label>
+                    <input type="text" class="form-control" id="location" name="location" value="{{ request('location') }}" placeholder="Search by location or address">
+                </div>
+                <div class="col-md-3">
+                    <label for="hotel_id" class="form-label">Hotel</label>
+                    <select class="form-select" id="hotel_id" name="hotel_id">
+                        <option value="">All Hotels</option>
+                        @foreach($hotels as $hotel)
+                            <option value="{{ $hotel->hotel_id }}" {{ request('hotel_id') == $hotel->hotel_id ? 'selected' : '' }}>
+                                {{ $hotel->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-1"></i> Apply Filters
+                        </button>
+                        <a href="{{ route('admin.restaurants.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle me-1"></i> Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">

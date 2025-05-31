@@ -17,13 +17,41 @@ class RestaurantController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $restaurants = Restaurant::with(['hotel'])
-            ->latest()
-            ->paginate(10);
-            
-        return view('admin.restaurants.index', compact('restaurants'));
+        $query = Restaurant::with(['hotel']);
+
+        // Name search
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        // Hotel filter
+        if ($request->filled('hotel_id')) {
+            $query->where('hotel_id', $request->hotel_id);
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('active', $request->status === 'active');
+        }
+
+        // Location search
+        if ($request->filled('location')) {
+            $query->where(function($q) use ($request) {
+                $q->where('location', 'like', '%' . $request->location . '%')
+                  ->orWhere('address', 'like', '%' . $request->location . '%');
+            });
+        }
+
+        $restaurants = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        // Get hotels for filter
+        $hotels = Hotel::where('active', true)->get();
+        
+        return view('admin.restaurants.index', compact('restaurants', 'hotels'));
     }
 
     /**

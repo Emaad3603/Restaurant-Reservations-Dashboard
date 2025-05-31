@@ -16,14 +16,42 @@ class MealTypeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $mealTypes = MealType::with(['translation', 'hotel', 'reservations'])
-            ->withCount('reservations')
-            ->latest()
-            ->paginate(10);
-            
-        return view('admin.meal-types.index', compact('mealTypes'));
+        $query = MealType::with(['translation', 'hotel', 'reservations'])
+            ->withCount('reservations');
+
+        // Name search
+        if ($request->filled('name')) {
+            $query->whereHas('translation', function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->name . '%');
+            });
+        }
+
+        // Hotel filter
+        if ($request->filled('hotel_id')) {
+            $query->where('hotel_id', $request->hotel_id);
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('active', $request->status === 'active');
+        }
+
+        // Company filter
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+
+        $mealTypes = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        // Get filter options
+        $hotels = Hotel::where('active', true)->get();
+        $companies = \App\Models\Company::all();
+        
+        return view('admin.meal-types.index', compact('mealTypes', 'hotels', 'companies'));
     }
 
     /**

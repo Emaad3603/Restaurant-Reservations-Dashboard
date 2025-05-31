@@ -133,6 +133,13 @@
                 </a>
             </li>
             @endif
+            @if($user && ($user->admin || $priv?->board_types_tab))
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.board-types.*') ? 'active' : '' }}" href="{{ route('admin.board-types.index') }}">
+                    <i class="bi bi-grid"></i> Board Types
+                </a>
+            </li>
+            @endif
             @if($user && ($user->admin || $priv?->reservations_tab))
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('admin.reservations.*') ? 'active' : '' }}" href="{{ route('admin.reservations.index') }}">

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReservationController;
 use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\RestaurantPricingTimeController;
+use App\Http\Controllers\Admin\BoardTypeController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -99,6 +100,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/{user}', [\App\Http\Controllers\AdminUserController::class, 'update'])->name('update');
             Route::delete('/{user}', [\App\Http\Controllers\AdminUserController::class, 'destroy'])->name('destroy');
         });
+
+        // Board Types
+        Route::resource('board-types', BoardTypeController::class);
     });
 });
 

@@ -120,6 +120,25 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
+                            <label for="board_type" class="form-label">Board Type</label>
+                            <select class="form-select @error('board_type') is-invalid @enderror" id="board_type" name="board_type">
+                                <option value="">Select Board Type</option>
+                                @foreach($boardTypes as $boardType)
+                                    <option value="{{ $boardType->board_id }}" {{ old('board_type', $reservation->guestReservation->board_type) == $boardType->board_id ? 'selected' : '' }}>
+                                        {{ $boardType->board_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('board_type')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select @error('status') is-invalid @enderror" id="status" name="status">
                                 <option value="pending" {{ $reservation->status == 'pending' ? 'selected' : '' }}>Pending</option>
