@@ -133,3 +133,5 @@ Route::prefix('admin/menu')->middleware('auth:admin')->group(function () {
     Route::put('/item/{item}', [MenuController::class, 'updateItem'])->name('admin.menu.item.update');
     Route::delete('/item/{item}', [MenuController::class, 'deleteItem'])->name('admin.menu.item.delete');
 });
+
+Route::get('admin/menus/manage', [\App\Http\Controllers\Admin\MenuController::class, 'index'])->name('admin.menus.manage');

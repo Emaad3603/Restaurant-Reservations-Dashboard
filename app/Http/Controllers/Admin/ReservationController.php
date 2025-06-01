@@ -9,8 +9,10 @@ use App\Models\MealType;
 use App\Models\Reservation;
 use App\Models\Restaurant;
 use App\Models\BoardType;
+use App\Models\GuestReservation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ReservationController extends Controller
 {
@@ -127,7 +129,7 @@ class ReservationController extends Controller
                 'pax' => $request->people_count,
                 'status' => 'pending',
                 'hotel_id' => $request->guest_hotel_id,
-                'company_id' => auth()->user()->company_id,
+                'company_id' => Auth::user()->company_id,
                 'board_type' => $request->board_type
             ]);
 
@@ -139,9 +141,11 @@ class ReservationController extends Controller
                 'restaurant_id' => $request->restaurant_id,
                 'day' => $request->reservation_date,
                 'time' => $request->reservation_time,
-                'company_id' => auth()->user()->company_id,
+                'company_id' => Auth::user()->company_id,
                 'guest_hotel_id' => $request->guest_hotel_id,
-                'meal_types_id' => $request->meal_types_id
+                'meal_types_id' => $request->meal_types_id,
+                'created_by' => Auth::user()->user_name,
+                'created_at' => now()
             ]);
 
             DB::commit();
@@ -225,7 +229,9 @@ class ReservationController extends Controller
                 'day' => $request->reservation_date,
                 'time' => $request->reservation_time,
                 'guest_hotel_id' => $request->guest_hotel_id,
-                'meal_types_id' => $request->meal_types_id
+                'meal_types_id' => $request->meal_types_id,
+                'updated_by' => Auth::user()->user_name,
+                'updated_at' => now()
             ]);
 
             DB::commit();
@@ -245,7 +251,18 @@ class ReservationController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            DB::beginTransaction();
+            $reservation = Reservation::findOrFail($id);
+            $reservation->delete();
+            DB::commit();
+            return redirect()->route('admin.reservations.index')
+                ->with('success', 'Reservation deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('admin.reservations.index')
+                ->with('error', 'Failed to delete reservation: ' . $e->getMessage());
+        }
     }
 
     public function confirm($id)

@@ -56,9 +56,13 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="company_id" class="form-label">Company ID</label>
-                            <input type="number" class="form-control @error('company_id') is-invalid @enderror" id="company_id" name="company_id" value="{{ old('company_id') }}">
-                            @error('company_id')
+                            <label for="always_paid_free" class="form-label">Payment Type <span class="text-danger">*</span></label>
+                            <select class="form-select @error('always_paid_free') is-invalid @enderror" id="always_paid_free" name="always_paid_free" required>
+                                <option value="null" {{ old('always_paid_free') === 'null' ? 'selected' : '' }}>Free Count</option>
+                                <option value="1" {{ old('always_paid_free') === '1' ? 'selected' : '' }}>Always Paid</option>
+                                <option value="0" {{ old('always_paid_free') === '0' ? 'selected' : '' }}>Always Free</option>
+                            </select>
+                            @error('always_paid_free')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -77,13 +81,6 @@
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="active" name="active" value="1" {{ old('active', true) ? 'checked' : '' }}>
                         <label class="form-check-label" for="active">Active</label>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="always_paid_free" name="always_paid_free" value="1" {{ old('always_paid_free', false) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="always_paid_free">Always Paid/Free</label>
                     </div>
                 </div>
 

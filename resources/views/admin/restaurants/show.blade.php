@@ -132,7 +132,7 @@
                 </div>
                 <div class="card-body">
                     <p>Manage this restaurant's pricing times and view their menus.</p>
-                    <a href="{{ route('admin.restaurants.menu.index', $restaurant->restaurants_id) }}" class="btn btn-primary btn-sm">
+                    <a href="{{ route('admin.restaurants.pricing-times.index', $restaurant->restaurants_id) }}" class="btn btn-primary btn-sm">
                         <i class="bi bi-clock-history me-1"></i> View Pricing Times
                     </a>
                 </div>

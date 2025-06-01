@@ -10,6 +10,7 @@ use App\Models\MenuCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class RestaurantController extends Controller
 {
@@ -71,10 +72,9 @@ class RestaurantController extends Controller
             'name' => 'required|string|max:255',
             'hotel_id' => 'required|exists:hotels,hotel_id',
             'capacity' => 'nullable|integer',
-            'company_id' => 'nullable|integer',
             'logo_url' => 'nullable|image|max:2048',
             'active' => 'nullable|boolean',
-            'always_paid_free' => 'nullable|boolean',
+            'always_paid_free' => 'required|in:null,1,0',
         ]);
 
         $logoPath = null;
@@ -82,14 +82,18 @@ class RestaurantController extends Controller
             $logoPath = $request->file('logo_url')->store('restaurants', 'public');
         }
 
+        $hotel = Hotel::findOrFail($validated['hotel_id']);
+
         $restaurant = new Restaurant();
         $restaurant->name = $validated['name'];
         $restaurant->hotel_id = $validated['hotel_id'];
         $restaurant->capacity = $validated['capacity'] ?? null;
-        $restaurant->company_id = $validated['company_id'] ?? null;
+        $restaurant->company_id = $hotel->company_id;
         $restaurant->logo_url = $logoPath;
         $restaurant->active = $request->has('active');
-        $restaurant->always_paid_free = $request->has('always_paid_free');
+        $restaurant->always_paid_free = $request->always_paid_free === 'null' ? null : (int)$request->always_paid_free;
+        $restaurant->created_by = Auth::user()->user_name;
+        $restaurant->created_at = now();
         $restaurant->save();
 
         return redirect()->route('admin.restaurants.index')->with('success', 'Restaurant created successfully.');
@@ -147,6 +151,8 @@ class RestaurantController extends Controller
         $restaurant->company_id = $validated['company_id'] ?? null;
         $restaurant->active = $request->has('active');
         $restaurant->always_paid_free = $request->has('always_paid_free');
+        $restaurant->updated_by = Auth::user()->user_name;
+        $restaurant->updated_at = now();
         $restaurant->save();
 
         return redirect()->route('admin.restaurants.index')->with('success', 'Restaurant updated successfully.');

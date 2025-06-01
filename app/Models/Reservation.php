@@ -111,4 +111,36 @@ class Reservation extends Model
     {
         return $this->pax ?? $this->guestDetails->count() ?: null;
     }
+
+    /**
+     * Get the admin user who created this reservation
+     */
+    public function creator()
+    {
+        return $this->belongsTo(AdminUser::class, 'created_by', 'admin_users_id');
+    }
+
+    /**
+     * Get the admin user who canceled this reservation
+     */
+    public function canceler()
+    {
+        return $this->belongsTo(AdminUser::class, 'canceled_by', 'admin_users_id');
+    }
+
+    /**
+     * Get the creator's name
+     */
+    public function getCreatorNameAttribute()
+    {
+        return $this->creator ? $this->creator->display_name : 'System';
+    }
+
+    /**
+     * Get the canceler's name
+     */
+    public function getCancelerNameAttribute()
+    {
+        return $this->canceler ? $this->canceler->display_name : 'System';
+    }
 }

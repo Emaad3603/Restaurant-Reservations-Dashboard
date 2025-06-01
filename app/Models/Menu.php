@@ -23,6 +23,8 @@ class Menu extends Model
         'active' => 'boolean'
     ];
 
+    protected $guarded = [];
+
     public function menuItems()
     {
         return $this->hasMany(\App\Models\MenuItem::class, 'menus_id', 'menus_id');
@@ -48,5 +50,37 @@ class Menu extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * Get the admin user who created this menu
+     */
+    public function creator()
+    {
+        return $this->belongsTo(AdminUser::class, 'created_by', 'admin_users_id');
+    }
+
+    /**
+     * Get the admin user who last updated this menu
+     */
+    public function updater()
+    {
+        return $this->belongsTo(AdminUser::class, 'updated_by', 'admin_users_id');
+    }
+
+    /**
+     * Get the creator's name
+     */
+    public function getCreatorNameAttribute()
+    {
+        return $this->creator ? $this->creator->display_name : 'System';
+    }
+
+    /**
+     * Get the updater's name
+     */
+    public function getUpdaterNameAttribute()
+    {
+        return $this->updater ? $this->updater->display_name : 'System';
     }
 } 

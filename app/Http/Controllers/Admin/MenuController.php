@@ -46,14 +46,16 @@ class MenuController extends Controller
                 'name' => $request->name,
                 'description' => $request->description,
                 'active' => $request->active ?? true,
-                'company_id' => Auth::user()->company_id
+                'company_id' => Auth::user()->company_id,
+                'created_by' => Auth::user()->user_name,
+                'created_at' => now()
             ]);
 
             DB::commit();
-            return response()->json(['success' => true, 'menu' => $menu]);
+            return redirect()->route('admin.menus.manage')->with('success', 'Menu created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Failed to create menu'], 500);
+            return redirect()->back()->with('error', 'Failed to create menu: ' . $e->getMessage());
         }
     }
 
@@ -71,7 +73,9 @@ class MenuController extends Controller
             $menu->update([
                 'name' => $request->name,
                 'description' => $request->description,
-                'active' => $request->active ?? $menu->active
+                'active' => $request->active ?? $menu->active,
+                'updated_by' => Auth::user()->user_name,
+                'updated_at' => now()
             ]);
 
             DB::commit();
@@ -112,7 +116,6 @@ class MenuController extends Controller
         $request->validate([
             'menus_id' => 'required|exists:menus,menus_id',
             'label' => 'required|string|max:255',
-            // 'active' => 'boolean'
         ]);
 
         try {
@@ -121,14 +124,15 @@ class MenuController extends Controller
             $category = MenuCategory::create([
                 'menus_id' => $request->menus_id,
                 'label' => $request->label,
-                // 'active' => $request->active ?? true
+                'created_by' => Auth::user()->user_name,
+                'created_at' => now()
             ]);
 
             DB::commit();
-            return response()->json(['success' => true, 'category' => $category]);
+            return redirect()->route('admin.menus.manage')->with('success', 'Category created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Failed to create category'], 500);
+            return redirect()->back()->with('error', 'Failed to create category: ' . $e->getMessage());
         }
     }
 
@@ -146,7 +150,9 @@ class MenuController extends Controller
             $category->update([
                 'name' => $request->name,
                 'description' => $request->description,
-                'active' => $request->active ?? $category->active
+                'active' => $request->active ?? $category->active,
+                'updated_by' => Auth::user()->user_name,
+                'updated_at' => now()
             ]);
 
             DB::commit();
@@ -192,15 +198,15 @@ class MenuController extends Controller
                 'label' => $request->label,
                 'background_url' => $request->background_url,
                 'company_id' => Auth::user()->company_id,
-                'created_by' => Auth::id(),
-                'updated_by' => Auth::id(),
+                'created_by' => Auth::user()->user_name,
+                'created_at' => now()
             ]);
 
             DB::commit();
-            return response()->json(['success' => true, 'subcategory' => $subcategory]);
+            return redirect()->route('admin.menus.manage')->with('success', 'Subcategory created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Failed to create subcategory'], 500);
+            return redirect()->back()->with('error', 'Failed to create subcategory: ' . $e->getMessage());
         }
     }
 
@@ -218,7 +224,9 @@ class MenuController extends Controller
             $subcategory->update([
                 'name' => $request->name,
                 'description' => $request->description,
-                'active' => $request->active ?? $subcategory->active
+                'active' => $request->active ?? $subcategory->active,
+                'updated_by' => Auth::user()->user_name,
+                'updated_at' => now()
             ]);
 
             DB::commit();
@@ -268,7 +276,7 @@ class MenuController extends Controller
                 'menu_categories_id' => $request->menu_categories_id,
                 'menu_subcategories_id' => $request->menu_subcategories_id ?? null,
                 'created_by' => Auth::user()->user_name,
-                'created_at' => now(),
+                'created_at' => now()
             ]);
 
             // Create the MenuItem record using the new items_id
@@ -277,15 +285,15 @@ class MenuController extends Controller
                 'items_id' => $item->items_id,
                 'price' => $request->price,
                 'currencies_id' => $request->currencies_id,
-                'created_by' => Auth::id(),
-                'updated_by' => Auth::id(),
+                'created_by' => Auth::user()->user_name,
+                'created_at' => now()
             ]);
 
             DB::commit();
-            return response()->json(['success' => true, 'item' => $menuItem]);
+            return redirect()->route('admin.menus.manage')->with('success', 'Item created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Failed to create item'], 500);
+            return redirect()->back()->with('error', 'Failed to create item: ' . $e->getMessage());
         }
     }
 
@@ -305,7 +313,9 @@ class MenuController extends Controller
                 'name' => $request->name,
                 'description' => $request->description,
                 'price' => $request->price,
-                'active' => $request->active ?? $item->active
+                'active' => $request->active ?? $item->active,
+                'updated_by' => Auth::user()->user_name,
+                'updated_at' => now()
             ]);
 
             DB::commit();

@@ -38,6 +38,7 @@ class RestaurantPricingTimeController extends Controller
         $pricingTime = new RestaurantPricingTime();
         $pricingTime->restaurant_id = $restaurantId;
         $pricingTime->company_id = $restaurant->company_id;
+        $pricingTime->hotel_id = $restaurant->hotel_id;
         $pricingTime->year = $date->format('Y');
         $pricingTime->month = $date->format('m');
         $pricingTime->day = $date->format('d');
@@ -50,9 +51,11 @@ class RestaurantPricingTimeController extends Controller
         $pricingTime->extra_seats = $request->extra_seats ?? 0;
         $pricingTime->menu_url = $request->menu_url ?? null;
         $pricingTime->calculate_price = $request->calculate_price ?? 1;
+        $pricingTime->created_by = auth('admin')->user()->user_name;
+        $pricingTime->created_at = now();
         $pricingTime->save();
 
-        return redirect()->route('admin.restaurants.menu.index', $restaurantId)
+        return redirect()->route('admin.restaurants.pricing-times.index', $restaurantId)
             ->with('success', 'Pricing time added successfully!');
     }
 
@@ -102,6 +105,8 @@ class RestaurantPricingTimeController extends Controller
         $pricingTime->extra_seats = $request->extra_seats ?? 0;
         $pricingTime->menu_url = $request->menu_url ?? null;
         $pricingTime->calculate_price = $request->calculate_price ?? 1;
+        $pricingTime->updated_by = auth('admin')->user()->user_name;
+        $pricingTime->updated_at = now();
         $pricingTime->save();
         return redirect()->route('admin.restaurants.pricing-times.index', $restaurantId)
             ->with('success', 'Pricing time updated successfully!');

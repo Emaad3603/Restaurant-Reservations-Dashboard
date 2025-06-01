@@ -194,9 +194,9 @@
                                                 <ul>
                                                 @foreach($subcategory->items as $item)
                                                     <li>
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            {{ $item->label ?? $item->name }} - Price: {{ \App\Models\MenuItem::where('menus_id', $menu->menus_id)->where('items_id', $item->items_id)->value('price') }} {{ \App\Models\MenuItem::where('menus_id', $menu->menus_id)->where('items_id', $item->items_id)->join('currencies', 'menus_items.currencies_id', '=', 'currencies.currencies_id')->value('currency_symbol') }}
-                                                            <div>
+                                                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center align-items-start gap-2">
+                                                            <span>{{ $item->label ?? $item->name }} - Price: {{ \App\Models\MenuItem::where('menus_id', $menu->menus_id)->where('items_id', $item->items_id)->value('price') }} {{ \App\Models\MenuItem::where('menus_id', $menu->menus_id)->where('items_id', $item->items_id)->join('currencies', 'menus_items.currencies_id', '=', 'currencies.currencies_id')->value('currency_symbol') }}</span>
+                                                            <div class="d-flex gap-1">
                                                                 <!-- Edit Item Button -->
                                                                 <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#editItemModal{{ $item->items_id }}">Edit</button>
                                                                 <!-- Delete Item Form -->
@@ -266,9 +266,9 @@
                                     <ul>
                                     @foreach($category->items as $item)
                                         <li>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                {{ $item->label ?? $item->name }}
-                                                <div>
+                                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center align-items-start gap-2">
+                                                <span>{{ $item->label ?? $item->name }}</span>
+                                                <div class="d-flex gap-1">
                                                     <!-- Edit Item Button -->
                                                     <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#editItemModal{{ $item->items_id }}">Edit</button>
                                                     <!-- Delete Item Form -->
@@ -292,4 +292,4 @@
         @endforeach
     @endif
 </div>
-@endsection 
+@endsection

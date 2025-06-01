@@ -10,6 +10,7 @@ use App\Models\Restaurant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class MealTypeController extends Controller
 {
@@ -81,6 +82,8 @@ class MealTypeController extends Controller
                 'label' => $request->label,
                 'company_id' => $request->company_id,
                 'active' => $request->has('active'),
+                'created_by' => Auth::user()->user_name,
+                'created_at' => now()
             ]);
 
             return redirect()->route('admin.meal-types.index')
@@ -132,6 +135,8 @@ class MealTypeController extends Controller
                 'label' => $request->label,
                 'company_id' => $request->company_id,
                 'active' => $request->has('active'),
+                'updated_by' => Auth::user()->user_name,
+                'updated_at' => now()
             ]);
 
             return redirect()->route('admin.meal-types.index')

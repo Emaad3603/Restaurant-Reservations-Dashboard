@@ -9,6 +9,7 @@ use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class BoardTypeController extends Controller
 {
@@ -88,6 +89,8 @@ class BoardTypeController extends Controller
                 'company_id' => $request->company_id,
                 'hotel_id' => $request->hotel_id,
                 'free_count' => $request->free_count,
+                'created_by' => Auth::user()->user_name,
+                'created_at' => now()
             ]);
 
             DB::commit();
@@ -145,6 +148,8 @@ class BoardTypeController extends Controller
                 'company_id' => $request->company_id,
                 'hotel_id' => $request->hotel_id,
                 'free_count' => $request->free_count,
+                'updated_by' => Auth::user()->user_name,
+                'updated_at' => now()
             ]);
 
             DB::commit();

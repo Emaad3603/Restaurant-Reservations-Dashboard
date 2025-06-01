@@ -57,4 +57,36 @@ class MealType extends Model
     {
         return $this->hasMany(Reservation::class, 'meal_types_id', 'meal_types_id');
     }
+
+    /**
+     * Get the admin user who created this meal type
+     */
+    public function creator()
+    {
+        return $this->belongsTo(AdminUser::class, 'created_by', 'admin_users_id');
+    }
+
+    /**
+     * Get the admin user who last updated this meal type
+     */
+    public function updater()
+    {
+        return $this->belongsTo(AdminUser::class, 'updated_by', 'admin_users_id');
+    }
+
+    /**
+     * Get the creator's name
+     */
+    public function getCreatorNameAttribute()
+    {
+        return $this->creator ? $this->creator->display_name : 'System';
+    }
+
+    /**
+     * Get the updater's name
+     */
+    public function getUpdaterNameAttribute()
+    {
+        return $this->updater ? $this->updater->display_name : 'System';
+    }
 }

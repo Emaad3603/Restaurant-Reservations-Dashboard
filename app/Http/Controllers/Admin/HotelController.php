@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Hotel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class HotelController extends Controller
 {
@@ -94,6 +95,8 @@ class HotelController extends Controller
 
         $hotel = new Hotel($validated);
         $hotel->logo_url = $logoPath;
+        $hotel->created_by = Auth::user()->user_name;
+        $hotel->created_at = now();
         $hotel->save();
 
         return redirect()->route('admin.hotels.index')
@@ -145,6 +148,8 @@ class HotelController extends Controller
         }
 
         $hotel->update($validated);
+        $hotel->updated_by = Auth::user()->user_name;
+        $hotel->updated_at = now();
         $hotel->save();
 
         return redirect()->route('admin.hotels.index')

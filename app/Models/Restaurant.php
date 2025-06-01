@@ -48,4 +48,36 @@ class Restaurant extends Model
                 'cuisine' => ''
             ]);
     }
+
+    /**
+     * Get the admin user who created this restaurant
+     */
+    public function creator()
+    {
+        return $this->belongsTo(AdminUser::class, 'created_by', 'admin_users_id');
+    }
+
+    /**
+     * Get the admin user who last updated this restaurant
+     */
+    public function updater()
+    {
+        return $this->belongsTo(AdminUser::class, 'updated_by', 'admin_users_id');
+    }
+
+    /**
+     * Get the creator's name
+     */
+    public function getCreatorNameAttribute()
+    {
+        return $this->creator ? $this->creator->display_name : 'System';
+    }
+
+    /**
+     * Get the updater's name
+     */
+    public function getUpdaterNameAttribute()
+    {
+        return $this->updater ? $this->updater->display_name : 'System';
+    }
 }
