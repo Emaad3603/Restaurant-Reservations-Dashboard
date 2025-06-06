@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ReservationController;
 use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\RestaurantPricingTimeController;
 use App\Http\Controllers\Admin\BoardTypeController;
+use App\Http\Controllers\Admin\CompanyController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -103,6 +104,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Board Types
         Route::resource('board-types', BoardTypeController::class);
+
+        // Company Management Routes
+        Route::resource('companies', CompanyController::class);
     });
 });
 

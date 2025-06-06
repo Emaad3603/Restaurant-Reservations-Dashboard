@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Hotel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class HotelController extends Controller
 {
@@ -90,7 +91,9 @@ class HotelController extends Controller
 
         $logoPath = null;
         if ($request->hasFile('logo_url')) {
-            $logoPath = $request->file('logo_url')->store('hotels', 'public');
+            $file = $request->file('logo_url');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $logoPath = $file->storeAs('hotels', $filename, 'public');
         }
 
         $hotel = new Hotel($validated);
@@ -117,7 +120,8 @@ class HotelController extends Controller
      */
     public function edit(Hotel $hotel)
     {
-        return view('admin.hotels.edit', compact('hotel'));
+        $companies = \App\Models\Company::all();
+        return view('admin.hotels.edit', compact('hotel', 'companies'));
     }
 
     /**
@@ -125,35 +129,65 @@ class HotelController extends Controller
      */
     public function update(Request $request, Hotel $hotel)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'zip_code' => 'nullable|string|max:20',
-            'logo_url' => 'nullable|image|max:2048',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'verification_type' => 'nullable|integer',
+                'company_id' => 'required|integer',
+                'free_count' => 'nullable|integer',
+                'time_zone' => 'nullable|string|max:45',
+                'plus_days_adjust' => 'nullable|integer',
+                'minus_days_adjust' => 'nullable|integer',
+                'logo_url' => 'nullable|image|max:2048',
+                'active' => 'boolean',
+                'restricted_restaurants' => 'boolean',
+            ]);
 
-        if ($request->hasFile('logo_url')) {
-            // Delete old logo if exists
-            if ($hotel->logo_url) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($hotel->logo_url);
+            // Handle file upload
+            if ($request->hasFile('logo_url')) {
+                try {
+                    // Delete old logo if exists
+                    if ($hotel->logo_url) {
+                        $oldPath = str_replace(asset('storage/'), '', $hotel->logo_url);
+                        if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+                            Storage::disk('public')->delete($oldPath);
+                        }
+                    }
+                    
+                    $file = $request->file('logo_url');
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $path = $file->storeAs('hotels', $filename, 'public');
+                    
+                    if ($path) {
+                        $hotel->logo_url = $path;
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('File upload error: ' . $e->getMessage());
+                    return redirect()->back()->with('error', 'Error uploading file: ' . $e->getMessage());
+                }
             }
-            $hotel->logo_url = $request->file('logo_url')->store('hotels', 'public');
+
+            // Update other fields
+            $hotel->name = $validated['name'];
+            $hotel->verification_type = $validated['verification_type'] ?? 0;
+            $hotel->company_id = $validated['company_id'];
+            $hotel->free_count = $validated['free_count'] ?? 0;
+            $hotel->time_zone = $validated['time_zone'] ?? '+02:00';
+            $hotel->plus_days_adjust = $validated['plus_days_adjust'] ?? 0;
+            $hotel->minus_days_adjust = $validated['minus_days_adjust'] ?? 0;
+            $hotel->active = $request->has('active');
+            $hotel->restricted_restaurants = $request->has('restricted_restaurants');
+            
+            $hotel->updated_by = Auth::user()->user_name;
+            $hotel->updated_at = now();
+            $hotel->save();
+
+            return redirect()->route('admin.hotels.index')
+                ->with('success', 'Hotel updated successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Hotel update error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error updating hotel: ' . $e->getMessage());
         }
-
-        $hotel->update($validated);
-        $hotel->updated_by = Auth::user()->user_name;
-        $hotel->updated_at = now();
-        $hotel->save();
-
-        return redirect()->route('admin.hotels.index')
-            ->with('success', 'Hotel updated successfully.');
     }
 
     /**

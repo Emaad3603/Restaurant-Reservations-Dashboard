@@ -16,12 +16,14 @@
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Filter Reservations</h5>
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-funnel me-1"></i> Filter Reservations
+            </h6>
         </div>
         <div class="card-body">
-            <form action="{{ route('admin.reports.reservations') }}" method="GET">
+            <form method="GET" action="{{ route('admin.reports.reservations') }}" class="mb-0">
                 <div class="row">
                     <div class="col-md-3 mb-3">
                         <label for="start_date" class="form-label">Start Date</label>
@@ -88,11 +90,90 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#columnSelectModal">
+                <i class="bi bi-layout-three-columns"></i> Select Columns
+            </button>
+        </div>
+    </div>
+
+    <!-- Column Selection Modal -->
+    <div class="modal fade" id="columnSelectModal" tabindex="-1" aria-labelledby="columnSelectModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="columnSelectModalLabel">Select Columns to Display/Print</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="columnSelectForm">
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="0" id="col-id" checked>
+                <label class="form-check-label" for="col-id">ID</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="1" id="col-room" checked>
+                <label class="form-check-label" for="col-room">Room Number</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="2" id="col-date" checked>
+                <label class="form-check-label" for="col-date">Date</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="3" id="col-time" checked>
+                <label class="form-check-label" for="col-time">Time</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="4" id="col-guest" checked>
+                <label class="form-check-label" for="col-guest">Guest</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="5" id="col-hotel" checked>
+                <label class="form-check-label" for="col-hotel">Hotel</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="6" id="col-restaurant" checked>
+                <label class="form-check-label" for="col-restaurant">Restaurant</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="7" id="col-mealtype" checked>
+                <label class="form-check-label" for="col-mealtype">Meal Type</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="8" id="col-guests" checked>
+                <label class="form-check-label" for="col-guests">Guests</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="9" id="col-status" checked>
+                <label class="form-check-label" for="col-status">Status</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input column-toggle" type="checkbox" value="10" id="col-actions" checked>
+                <label class="form-check-label" for="col-actions">Actions</label>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-table me-1"></i> Reservations List
+            </h6>
+            <div class="text-muted small">
+                Total Records: {{ $reservations->total() }}
+            </div>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
-                    <thead>
+                    <thead class="table-light">
                         <tr>
                             <th>ID</th>
                             <th>Room Number</th>
@@ -144,7 +225,12 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center">No reservations found</td>
+                                <td colspan="11" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        No reservations found
+                                    </div>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -158,23 +244,153 @@
     </div>
 </div>
 
-@push('styles')
-<style media="print">
-    .sidebar, .navbar, form, .card-header, .btn, .pagination, footer {
-        display: none !important;
+<style>
+    .card {
+        border: none;
+        border-radius: 0.5rem;
     }
-    body {
-        padding: 0;
-        margin: 0;
+    .card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
     }
-    .container-fluid {
-        width: 100%;
-        padding: 0;
+    .table > :not(caption) > * > * {
+        padding: 1rem;
     }
-    table {
-        width: 100%;
+    .table thead th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+    .badge {
+        padding: 0.5em 0.75em;
+        font-weight: 500;
+    }
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+    .pagination {
+        margin-bottom: 0;
+    }
+    .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    .page-link {
+        color: var(--primary-color);
+    }
+    .page-link:hover {
+        color: var(--secondary-color);
     }
 </style>
+
+<style media="print">
+    @page {
+        size: A4 landscape;
+        margin: 0;
+    }
+    html, body, .container-fluid, .card, .card-body, .card-header, .table-responsive, table {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100vw !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        box-sizing: border-box !important;
+        background: #fff !important;
+    }
+    html, body {
+        font-size: 12pt;
+        line-height: 1.5;
+        color: #000 !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+    }
+    .sidebar, .navbar, .btn, footer, .pagination, form[action*="reports"] {
+        display: none !important;
+    }
+    .table-responsive {
+        overflow: visible !important;
+    }
+    table.table, table {
+        border-collapse: collapse !important;
+        border: 1.5px solid #222 !important;
+        background: #fff !important;
+        table-layout: auto !important;
+        width: 100vw !important;
+    }
+    table.table th, table.table td, table th, table td {
+        border: 1.5px solid #222 !important;
+        padding: 6px 8px !important;
+        font-size: 11pt !important;
+        color: #000 !important;
+        background: #fff !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
+    table.table th, table th {
+        font-weight: bold !important;
+        font-size: 12pt !important;
+        background: #f8f8f8 !important;
+        text-align: center !important;
+        border-bottom: 2px solid #222 !important;
+    }
+    .status-ended, .status-canceled, .status-cancelled {
+        color: #d00 !important;
+        font-weight: bold !important;
+    }
+    .status-completed, .status-confirmed, .status-success {
+        color: #080 !important;
+        font-weight: bold !important;
+    }
+    .cancelled-yes {
+        color: #d00 !important;
+        font-weight: bold !important;
+    }
+    .cancelled-no {
+        color: #080 !important;
+        font-weight: bold !important;
+    }
+    .guest-names {
+        white-space: pre-line !important;
+        text-align: left !important;
+        font-size: 11pt !important;
+    }
+    .text-primary, .text-success, .text-info, .text-warning {
+        color: #000 !important;
+    }
+    .text-gray-300 {
+        color: #666 !important;
+    }
+    .text-gray-800 {
+        color: #000 !important;
+    }
+</style>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateTableColumns() {
+        document.querySelectorAll('.table thead th, .table tbody td').forEach(function(cell) {
+            cell.style.display = '';
+        });
+        document.querySelectorAll('.column-toggle').forEach(function(checkbox) {
+            var colIdx = parseInt(checkbox.value);
+            var display = checkbox.checked ? '' : 'none';
+            document.querySelectorAll('.table tr').forEach(function(row) {
+                if (row.children[colIdx]) {
+                    row.children[colIdx].style.display = display;
+                }
+            });
+        });
+    }
+    document.querySelectorAll('.column-toggle').forEach(function(checkbox) {
+        checkbox.addEventListener('change', updateTableColumns);
+    });
+    // Initial update in case of saved state
+    updateTableColumns();
+});
+</script>
 @endpush
 
 @endsection 

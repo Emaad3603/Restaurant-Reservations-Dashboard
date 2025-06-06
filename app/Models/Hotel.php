@@ -14,6 +14,56 @@ class Hotel extends Model
     protected $guarded = [];
 
     /**
+     * Set the hotel's logo URL.
+     *
+     * @param  string  $value
+     * @return void
+     */
+    public function setLogoUrlAttribute($value)
+    {
+        if ($value && !str_starts_with($value, 'hotels/')) {
+            $this->attributes['logo_url'] = $value;
+        } else {
+            $this->attributes['logo_url'] = $value;
+        }
+    }
+
+    /**
+     * Get the hotel's logo URL.
+     *
+     * @param  string  $value
+     * @return string|null
+     */
+    public function getLogoUrlAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        // If it's already a full URL, return it
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            return $value;
+        }
+
+        // If it's a full path, return it
+        if (str_starts_with($value, '/')) {
+            return $value;
+        }
+
+        // If it's a relative path, prepend storage path
+        if (str_starts_with($value, 'hotels/')) {
+            return asset('storage/' . $value);
+        }
+
+        // If it's a temporary path, return null
+        if (str_contains($value, '\\') || str_contains($value, 'C:')) {
+            return null;
+        }
+
+        return asset('storage/' . $value);
+    }
+
+    /**
      * Get the restaurants for the hotel.
      */
     public function restaurants()

@@ -19,7 +19,7 @@
     <!-- Metrics Cards -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary h-100 py-2">
+            <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -36,7 +36,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success h-100 py-2">
+            <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -53,7 +53,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info h-100 py-2">
+            <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -71,7 +71,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning h-100 py-2">
+            <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -92,9 +92,11 @@
     <div class="row">
         <!-- Meal Type Pie Chart -->
         <div class="col-xl-4 col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold">Reservations by Meal Type</h6>
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-pie-chart me-1"></i> Reservations by Meal Type
+                    </h6>
                 </div>
                 <div class="card-body">
                     <div class="chart-pie">
@@ -113,9 +115,11 @@
 
         <!-- Restaurant Bar Chart -->
         <div class="col-xl-4 col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold">Reservations by Restaurant</h6>
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-bar-chart me-1"></i> Reservations by Restaurant
+                    </h6>
                 </div>
                 <div class="card-body">
                     <div class="chart-bar">
@@ -127,9 +131,11 @@
 
         <!-- Day of Week Line Chart -->
         <div class="col-xl-4 col-lg-12 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="m-0 font-weight-bold">Reservations by Day of Week</h6>
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-graph-up me-1"></i> Reservations by Day of Week
+                    </h6>
                 </div>
                 <div class="card-body">
                     <div class="chart-line">
@@ -142,21 +148,206 @@
 </div>
 
 @push('styles')
+<style>
+    .card {
+        border: none;
+        border-radius: 0.5rem;
+    }
+    .card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+    }
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+    .border-left-info {
+        border-left: 0.25rem solid #36b9cc !important;
+    }
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+    .text-xs {
+        font-size: 0.7rem;
+    }
+    .chart-pie, .chart-bar, .chart-line {
+        position: relative;
+        height: 300px;
+    }
+    .small {
+        font-size: 0.875rem;
+    }
+    .fas.fa-circle {
+        font-size: 0.75rem;
+    }
+</style>
+
 <style media="print">
-    .sidebar, .navbar, .btn, footer {
-        display: none !important;
+    @page {
+        size: A4;
+        margin: 1cm;
     }
     body {
         padding: 0;
         margin: 0;
+        font-size: 12pt;
+        line-height: 1.5;
+        color: #000 !important;
+        background: #fff !important;
     }
     .container-fluid {
         width: 100%;
         padding: 0;
+        margin: 0;
+    }
+    .sidebar, .navbar, .btn, footer {
+        display: none !important;
     }
     .card {
-        border: none !important;
+        border: 1px solid #000 !important;
         box-shadow: none !important;
+        break-inside: avoid;
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+    }
+    .card-header {
+        background-color: #f8f9fc !important;
+        border-bottom: 2px solid #000 !important;
+        padding: 10px !important;
+    }
+    .card-body {
+        padding: 15px !important;
+    }
+    .border-left-primary, .border-left-success, .border-left-info, .border-left-warning {
+        border-left: 2px solid #000 !important;
+    }
+    .text-primary, .text-success, .text-info, .text-warning {
+        color: #000 !important;
+    }
+    .text-gray-300 {
+        color: #666 !important;
+    }
+    .text-gray-800 {
+        color: #000 !important;
+    }
+    .text-xs {
+        font-size: 10pt !important;
+    }
+    .h5 {
+        font-size: 14pt !important;
+        font-weight: bold !important;
+    }
+    .chart-pie, .chart-bar, .chart-line {
+        position: relative;
+        height: 300px;
+        page-break-inside: avoid;
+    }
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+        page-break-inside: avoid;
+    }
+    .small {
+        font-size: 11pt !important;
+    }
+    .fas.fa-circle {
+        font-size: 10pt !important;
+    }
+    .row {
+        display: block !important;
+    }
+    .col-xl-3, .col-xl-4, .col-lg-6, .col-lg-12 {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
+    .py-2 {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+    .mr-2 {
+        margin-right: 0.5rem !important;
+    }
+    .col-auto {
+        display: none !important;
+    }
+    .fs-2 {
+        font-size: 1.5rem !important;
+    }
+    .text-uppercase {
+        text-transform: uppercase !important;
+    }
+    .font-weight-bold {
+        font-weight: bold !important;
+    }
+    .no-gutters {
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+    }
+    .no-gutters > .col,
+    .no-gutters > [class*="col-"] {
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+    .align-items-center {
+        align-items: center !important;
+    }
+    .justify-content-between {
+        justify-content: space-between !important;
+    }
+    .d-flex {
+        display: flex !important;
+    }
+    .flex-row {
+        flex-direction: row !important;
+    }
+    .align-items-center {
+        align-items: center !important;
+    }
+    .me-1 {
+        margin-right: 0.25rem !important;
+    }
+    .mt-4 {
+        margin-top: 1.5rem !important;
+    }
+    .text-center {
+        text-align: center !important;
+    }
+    .mr-2 {
+        margin-right: 0.5rem !important;
+    }
+    .fas {
+        font-family: "Font Awesome 5 Free" !important;
+        font-weight: 900 !important;
+    }
+    .bi {
+        font-family: "Bootstrap Icons" !important;
+    }
+    .bi-pie-chart:before {
+        content: "\f200" !important;
+    }
+    .bi-bar-chart:before {
+        content: "\f201" !important;
+    }
+    .bi-graph-up:before {
+        content: "\f202" !important;
+    }
+    .bi-calendar-check:before {
+        content: "\f274" !important;
+    }
+    .bi-calendar-day:before {
+        content: "\f783" !important;
+    }
+    .bi-calendar-week:before {
+        content: "\f784" !important;
+    }
+    .bi-calendar-month:before {
+        content: "\f785" !important;
     }
 </style>
 @endpush
@@ -189,11 +380,18 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 data: mealTypeValues,
                 backgroundColor: mealTypeColors,
+                borderWidth: 1,
+                borderColor: '#fff'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
         }
     });
 
@@ -222,9 +420,17 @@ document.addEventListener('DOMContentLoaded', function() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
                 }
             }
         }
@@ -256,9 +462,17 @@ document.addEventListener('DOMContentLoaded', function() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
                 }
             }
         }
