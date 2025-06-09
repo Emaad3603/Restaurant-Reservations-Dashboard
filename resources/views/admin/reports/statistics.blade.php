@@ -10,9 +10,12 @@
             <a href="{{ route('admin.reports.reservations') }}" class="btn btn-primary">
                 <i class="bi bi-table me-1"></i> Detailed Reports
             </a>
-            <button onclick="window.print();" class="btn btn-info">
+            <a href="{{ route('admin.reports.statistics', ['print' => true]) }}" class="btn btn-info" target="_blank">
                 <i class="bi bi-printer me-1"></i> Print Statistics
-            </button>
+            </a>
+            <a href="{{ route('admin.reports.statistics', ['download' => true]) }}" class="btn btn-success">
+                <i class="bi bi-download me-1"></i> Download PDF
+            </a>
         </div>
     </div>
 
@@ -105,7 +108,7 @@
                     <div class="mt-4 text-center small">
                         @foreach($reservationsByMealType as $index => $mealType)
                             <span class="mr-2">
-                                <i class="fas fa-circle" style="color: {{ 'hsl(' . ($index * 60) . ', 70%, 60%)' }}"></i> {{ $mealType->name }}
+                                <i class="fas fa-circle color-{{ $index % 7 }}"></i> {{ $mealType->name }}
                             </span>
                         @endforeach
                     </div>
@@ -182,6 +185,13 @@
     .fas.fa-circle {
         font-size: 0.75rem;
     }
+    .color-0 { color: #4e73df; }
+    .color-1 { color: #1cc88a; }
+    .color-2 { color: #36b9cc; }
+    .color-3 { color: #f6c23e; }
+    .color-4 { color: #e74a3b; }
+    .color-5 { color: #858796; }
+    .color-6 { color: #5a5c69; }
 </style>
 
 <style media="print">

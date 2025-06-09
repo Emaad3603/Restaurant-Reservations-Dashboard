@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class RestaurantController extends Controller
 {
@@ -124,38 +125,60 @@ class RestaurantController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Restaurant $restaurant)
     {
-        $restaurant = Restaurant::findOrFail($id);
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'hotel_id' => 'required|exists:hotels,hotel_id',
-            'capacity' => 'nullable|integer',
-            'company_id' => 'nullable|integer',
-            'logo_url' => 'nullable|image|max:2048',
-            'active' => 'nullable|boolean',
-            'always_paid_free' => 'nullable|boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'hotel_id' => 'required|exists:hotels,hotel_id',
+                'company_id' => 'required|exists:companies,company_id',
+                'capacity' => 'nullable|integer|min:0',
+                'logo_url' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+                'active' => 'boolean',
+                'always_paid_free' => 'boolean'
+            ]);
 
-        if ($request->hasFile('logo_url')) {
-            // Delete old logo if exists
-            if ($restaurant->logo_url) {
-                Storage::disk('public')->delete($restaurant->logo_url);
+            $data = [
+                'name' => $validated['name'],
+                'hotel_id' => $validated['hotel_id'],
+                'company_id' => $validated['company_id'],
+                'capacity' => $validated['capacity'],
+                'active' => $validated['active'],
+                'always_paid_free' => $validated['always_paid_free']
+            ];
+
+            // Handle file upload
+            if ($request->hasFile('logo_url')) {
+                try {
+                    // Delete old logo if exists
+                    if ($restaurant->logo_url) {
+                        $oldPath = str_replace(asset('storage/'), '', $restaurant->logo_url);
+                        if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+                            Storage::disk('public')->delete($oldPath);
+                        }
+                    }
+                    
+                    $file = $request->file('logo_url');
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $path = $file->storeAs('restaurants', $filename, 'public');
+                    
+                    if ($path) {
+                        $data['logo_url'] = $path;
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('File upload error: ' . $e->getMessage());
+                    return redirect()->back()->with('error', 'Error uploading file: ' . $e->getMessage());
+                }
             }
-            $restaurant->logo_url = $request->file('logo_url')->store('restaurants', 'public');
+
+            $restaurant->update($data);
+
+            return redirect()->route('admin.restaurants.index')
+                ->with('success', 'Restaurant updated successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Restaurant update error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error updating restaurant: ' . $e->getMessage());
         }
-
-        $restaurant->name = $validated['name'];
-        $restaurant->hotel_id = $validated['hotel_id'];
-        $restaurant->capacity = $validated['capacity'] ?? null;
-        $restaurant->company_id = $validated['company_id'] ?? null;
-        $restaurant->active = $request->has('active');
-        $restaurant->always_paid_free = $request->has('always_paid_free');
-        $restaurant->updated_by = Auth::user()->user_name;
-        $restaurant->updated_at = now();
-        $restaurant->save();
-
-        return redirect()->route('admin.restaurants.index')->with('success', 'Restaurant updated successfully.');
     }
 
     /**

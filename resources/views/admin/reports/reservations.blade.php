@@ -10,8 +10,11 @@
             <a href="{{ route('admin.reports.statistics') }}" class="btn btn-primary">
                 <i class="bi bi-bar-chart me-1"></i> Statistics
             </a>
-            <button onclick="window.print();" class="btn btn-info">
+            <button onclick="printReport()" class="btn btn-info">
                 <i class="bi bi-printer me-1"></i> Print Report
+            </button>
+            <button onclick="downloadReport()" class="btn btn-success">
+                <i class="bi bi-download me-1"></i> Download PDF
             </button>
         </div>
     </div>
@@ -109,48 +112,44 @@
           <div class="modal-body">
             <form id="columnSelectForm">
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="0" id="col-id" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="id" id="col-id" checked>
                 <label class="form-check-label" for="col-id">ID</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="1" id="col-room" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="room" id="col-room" checked>
                 <label class="form-check-label" for="col-room">Room Number</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="2" id="col-date" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="date" id="col-date" checked>
                 <label class="form-check-label" for="col-date">Date</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="3" id="col-time" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="time" id="col-time" checked>
                 <label class="form-check-label" for="col-time">Time</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="4" id="col-guest" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="guest" id="col-guest" checked>
                 <label class="form-check-label" for="col-guest">Guest</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="5" id="col-hotel" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="hotel" id="col-hotel" checked>
                 <label class="form-check-label" for="col-hotel">Hotel</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="6" id="col-restaurant" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="restaurant" id="col-restaurant" checked>
                 <label class="form-check-label" for="col-restaurant">Restaurant</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="7" id="col-mealtype" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="mealtype" id="col-mealtype" checked>
                 <label class="form-check-label" for="col-mealtype">Meal Type</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="8" id="col-guests" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="guests" id="col-guests" checked>
                 <label class="form-check-label" for="col-guests">Guests</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="9" id="col-status" checked>
+                <input class="form-check-input column-toggle" type="checkbox" value="status" id="col-status" checked>
                 <label class="form-check-label" for="col-status">Status</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input column-toggle" type="checkbox" value="10" id="col-actions" checked>
-                <label class="form-check-label" for="col-actions">Actions</label>
               </div>
             </form>
           </div>
@@ -369,25 +368,88 @@
 
 @push('scripts')
 <script>
+function printReport() {
+    // Get all checked columns
+    const selectedColumns = [];
+    document.querySelectorAll('.column-toggle:checked').forEach(checkbox => {
+        selectedColumns.push(checkbox.value);
+    });
+
+    // Build the URL with selected columns
+    const baseUrl = "{{ route('admin.reports.reservations', array_merge(request()->query(), ['print' => true])) }}";
+    const url = new URL(baseUrl);
+    
+    // Add selected columns to URL
+    selectedColumns.forEach(col => {
+        url.searchParams.append('columns[]', col);
+    });
+
+    // Open in new window
+    window.open(url.toString(), '_blank');
+}
+
+function downloadReport() {
+    // Get all checked columns
+    const selectedColumns = [];
+    document.querySelectorAll('.column-toggle:checked').forEach(checkbox => {
+        selectedColumns.push(checkbox.value);
+    });
+
+    // Build the URL with selected columns
+    const baseUrl = "{{ route('admin.reports.reservations', array_merge(request()->query(), ['download' => true])) }}";
+    const url = new URL(baseUrl);
+    
+    // Add selected columns to URL
+    selectedColumns.forEach(col => {
+        url.searchParams.append('columns[]', col);
+    });
+
+    // Trigger download
+    window.location.href = url.toString();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Map column values to their indices
+    const columnMap = {
+        'id': 0,
+        'room': 1,
+        'date': 2,
+        'time': 3,
+        'guest': 4,
+        'hotel': 5,
+        'restaurant': 6,
+        'mealtype': 7,
+        'guests': 8,
+        'status': 9
+    };
+
     function updateTableColumns() {
+        // First, show all columns
         document.querySelectorAll('.table thead th, .table tbody td').forEach(function(cell) {
             cell.style.display = '';
         });
+
+        // Then hide unchecked columns
         document.querySelectorAll('.column-toggle').forEach(function(checkbox) {
-            var colIdx = parseInt(checkbox.value);
-            var display = checkbox.checked ? '' : 'none';
-            document.querySelectorAll('.table tr').forEach(function(row) {
-                if (row.children[colIdx]) {
-                    row.children[colIdx].style.display = display;
-                }
-            });
+            const colValue = checkbox.value;
+            const colIdx = columnMap[colValue];
+            if (colIdx !== undefined) {
+                const display = checkbox.checked ? '' : 'none';
+                document.querySelectorAll('.table tr').forEach(function(row) {
+                    if (row.children[colIdx]) {
+                        row.children[colIdx].style.display = display;
+                    }
+                });
+            }
         });
     }
+
+    // Add event listeners to checkboxes
     document.querySelectorAll('.column-toggle').forEach(function(checkbox) {
         checkbox.addEventListener('change', updateTableColumns);
     });
-    // Initial update in case of saved state
+
+    // Initial update
     updateTableColumns();
 });
 </script>

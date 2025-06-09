@@ -12,6 +12,15 @@ class Restaurant extends Model
     protected $table = 'restaurants';
     protected $primaryKey = 'restaurants_id';
     protected $guarded = [];
+    protected $fillable = [
+        'name',
+        'hotel_id',
+        'company_id',
+        'capacity',
+        'logo_url',
+        'active',
+        'always_paid_free'
+    ];
 
     /**
      * Get the hotel that owns the restaurant.
@@ -79,5 +88,40 @@ class Restaurant extends Model
     public function getUpdaterNameAttribute()
     {
         return $this->updater ? $this->updater->display_name : 'System';
+    }
+
+    /**
+     * Get the restaurant's logo URL.
+     *
+     * @param  string  $value
+     * @return string|null
+     */
+    public function getLogoUrlAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        // If it's already a full URL, return it
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            return $value;
+        }
+
+        // If it's a full path, return it
+        if (str_starts_with($value, '/')) {
+            return $value;
+        }
+
+        // If it's a relative path, prepend storage path
+        if (str_starts_with($value, 'restaurants/')) {
+            return asset('storage/' . $value);
+        }
+
+        // If it's a temporary path, return null
+        if (str_contains($value, '\\') || str_contains($value, 'C:')) {
+            return null;
+        }
+
+        return asset('storage/' . $value);
     }
 }
